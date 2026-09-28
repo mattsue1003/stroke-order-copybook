@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>筆順寫字本產生器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDEEF0; --panel:#FFFFFF; --ink:#23262A; --muted:#62686F; --line:#D5D8DC;
+  --red:#C23B2E; --red-soft:#F8E6E3; --paper-shadow:0 1px 2px rgba(40,30,30,.12),0 10px 28px rgba(40,30,30,.10);
+  --ui:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --kai:"LXGW WenKai TC","標楷體","DFKai-SB","BiauKai",serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1A1C1F; --panel:#24272B; --ink:#ECEDEE; --muted:#A3A8AE; --line:#3A3E44;
+    --red:#EE7A6C; --red-soft:#3A2826; --paper-shadow:0 8px 28px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1A1C1F; --panel:#24272B; --ink:#ECEDEE; --muted:#A3A8AE; --line:#3A3E44;
+  --red:#EE7A6C; --red-soft:#3A2826; --paper-shadow:0 8px 28px rgba(0,0,0,.5);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:15px;line-height:1.55;min-height:100%}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+
+.app{display:grid;grid-template-columns:minmax(320px,390px) 1fr;min-height:100vh}
+.side{background:var(--panel);border-right:1px solid var(--line);padding:22px 22px 170px;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.seal{width:54px;height:54px;background:var(--red);border-radius:6px;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:inset 0 0 0 3px var(--panel),inset 0 0 0 5px var(--red)}
+.seal span{font-family:var(--kai);font-size:34px;color:#fff;line-height:1}
+.brand h1{font-family:var(--kai);font-size:25px;margin:0;line-height:1.2;font-weight:700}
+.brand p{margin:2px 0 0;color:var(--muted);font-size:13px}
+
+.field{margin:0 0 16px}
+.lbl{display:block;font-weight:500;font-size:14px;margin-bottom:6px}
+textarea{width:100%;min-height:150px;resize:vertical;border:1.5px solid var(--line);border-radius:10px;padding:12px;background:transparent;font-family:var(--kai);font-size:18px;line-height:1.7}
+input[type=text]{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;background:transparent}
+.row-btns{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.ghost{border:1.5px solid var(--line);background:transparent;border-radius:999px;padding:5px 14px;font-size:13px;cursor:pointer}
+.ghost:hover{border-color:var(--red);color:var(--red)}
+
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1.5px solid var(--line);background:transparent;border-radius:9px;padding:7px 12px;cursor:pointer;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:#fff}
+.modes button{flex:1 1 100%;text-align:left;padding:9px 12px;display:flex;align-items:center;gap:12px}
+.modes small{display:block;font-size:12px;opacity:.8}
+.mico{display:flex;gap:2px;flex:none}
+.mico i{width:13px;height:13px;border:1.5px solid currentColor;border-radius:2px;opacity:.9}
+.mico i.f{background:currentColor}
+.mico i.l{background:currentColor;opacity:.35}
+.swatch{width:16px;height:16px;border-radius:4px;display:inline-block;vertical-align:-3px;margin-right:6px;border:1px solid rgba(0,0,0,.15)}
+
+.checks{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px}
+.checks label{display:flex;align-items:center;gap:7px;font-size:14px;cursor:pointer}
+.checks input{width:18px;height:18px;accent-color:var(--red)}
+.stepper{display:flex;align-items:center;gap:10px}
+.stepper button{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--line);background:transparent;font-size:20px;cursor:pointer;line-height:1}
+.stepper output{font-size:18px;font-weight:700;min-width:2ch;text-align:center}
+.hint{font-size:12.5px;color:var(--muted);margin-top:4px}
+
+.status{border-left:3px solid var(--red);background:var(--red-soft);padding:10px 12px;border-radius:0 8px 8px 0;font-size:13.5px;margin:4px 0 16px}
+.printbar{position:fixed;left:0;bottom:0;width:390px;max-width:100%;padding:10px 22px calc(12px + env(safe-area-inset-bottom,0px));background:var(--panel);border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px;z-index:5}
+.pb-top{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--muted)}
+.acts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.act{border:1.5px solid var(--red);color:var(--red);background:transparent;border-radius:10px;padding:10px 4px;font-weight:700;font-size:15px;cursor:pointer;line-height:1.2}
+.act:hover{background:var(--red-soft)}
+.act.fill{background:var(--red);color:#fff}
+.act.fill:hover{filter:brightness(1.06);background:var(--red)}
+.act:disabled{opacity:.5;cursor:wait}
+:root[data-theme="dark"] .act.fill{color:#141414}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .act.fill{color:#141414}}
+.primary{flex:1;border:0;background:var(--red);color:#fff;border-radius:12px;padding:12px 16px;font-weight:700;font-size:16px;cursor:pointer}
+.toast{position:fixed;left:50%;bottom:calc(140px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--panel);padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:60;max-width:calc(100% - 32px);text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+.preview{padding:28px 24px 60px;overflow-x:hidden}
+.pages{display:flex;flex-direction:column;align-items:center;gap:22px}
+.pw{position:relative;flex:none}
+.err{max-width:640px;margin:40px auto;padding:16px;border:2px dashed var(--red);border-radius:12px;color:var(--red)}
+
+/* ---------- 紙張 ---------- */
+.page{width:210mm;height:297mm;background:#fff;color:#1a1a1a;padding:12mm 12mm 10mm;position:absolute;left:0;top:0;transform-origin:0 0;box-shadow:var(--paper-shadow);display:flex;flex-direction:column;overflow:hidden;font-family:var(--pfont)}
+.ph{display:flex;align-items:flex-end;justify-content:space-between;gap:6mm;border-bottom:.5mm solid var(--gb);padding-bottom:2.5mm;min-height:13mm}
+.pt{font-size:8.5mm;font-weight:700;line-height:1.1;letter-spacing:.5mm}
+.pf{display:flex;gap:4mm;font-size:4.2mm;white-space:nowrap}
+.pf span{display:flex;align-items:flex-end;gap:1mm}
+.pf i{display:inline-block;width:24mm;border-bottom:.3mm solid #333;height:5mm}
+.pm{font-size:4mm;color:var(--gb);margin:2.2mm 0 0;min-height:5mm}
+.pbody{flex:1;margin-top:3mm;display:flex;min-height:0;justify-content:center}
+.pin{display:flex;flex:none}
+.pbody.h .pin{flex-direction:column;align-items:flex-start}
+.pbody.v .pin{flex-direction:row-reverse;align-items:flex-start}
+.pfoot{font-size:3.3mm;color:#8a8f93;text-align:center;margin-top:2mm}
+.line{display:flex}
+.pbody.h .line{flex-direction:row}
+.pbody.h .line+.line{margin-top:var(--gap)}
+.pbody.v .line{flex-direction:column}
+.pbody.v .line+.line{margin-right:var(--gap)}
+.cell{width:var(--s);height:var(--s);flex:none;position:relative;border:.3mm solid var(--gb);display:flex;align-items:center;justify-content:center}
+.pbody.h .cell+.cell{margin-left:-.3mm}
+.pbody.v .cell+.cell{margin-top:-.3mm}
+.cell svg{position:absolute;inset:0;width:100%;height:100%}
+.ch{position:relative;font-size:calc(var(--s)*.84);line-height:1;z-index:1}
+.k-trace .ch{color:var(--tc)}
+.k-punct .ch{color:var(--tc);font-size:calc(var(--s)*.6)}
+.k-model .ch{color:#1a1a1a}
+.tail{position:absolute;right:calc(var(--s)*.03);bottom:calc(var(--s)*.02);font-size:calc(var(--s)*.4);line-height:1;color:var(--tc);z-index:1}
+#exportBox{position:absolute;left:-12000px;top:0;width:210mm}
+#exportBox .page{position:relative;transform:none;box-shadow:none;margin-bottom:10mm}
+
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:18px 16px}
+  .printbar{width:100%;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px))}
+  .preview{padding:18px 12px 160px}
+}
+@page{size:A4;margin:0}
+@media print{
+  :root{padding:0}
+  body{background:#fff}
+  .side,.printbar,.toast,#exportBox{display:none!important}
+  .app{display:block}
+  .preview{padding:0}
+  .pages{display:block}
+  .pw{width:auto!important;height:auto!important}
+  .page{position:relative;transform:none!important;box-shadow:none;break-after:page;page-break-after:always}
+  .page:last-child{break-after:auto;page-break-after:auto}
+}
+
+.pbody.sv{flex:1;margin-top:3mm;display:flex;flex-direction:row-reverse;justify-content:flex-start;align-items:flex-start;gap:var(--ggap);min-height:0}
+.grp{display:flex;flex-direction:row-reverse;flex:none}
+.strip{flex:none;height:var(--colh);display:flex;justify-content:center;border:.3mm solid var(--gb);background:#fff;margin-left:-.3mm;position:relative;overflow:hidden}
+.strip img{width:100%;height:100%;object-fit:contain;display:block}
+.strip.miss{width:calc(var(--s)*.9);align-items:center;justify-content:center;color:#9aa0a6;font-size:4.2mm;writing-mode:vertical-rl;letter-spacing:1mm}
+.pcol{display:flex;flex-direction:column;flex:none}
+.pcol+.pcol{margin-right:-.3mm}
+.pcol .cell+.cell{margin-top:-.3mm;margin-left:0}
+.pfoot{display:flex;justify-content:space-between;gap:4mm}
+.pfoot .src{text-align:left;color:#8a8f93}
+.miss-list{margin-top:8px;font-size:13px;color:var(--red)}
+.pbody.nv{flex:1;margin-top:3mm;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;min-height:0}
+.nblk{display:flex;flex-direction:column;flex:none}
+.nblk+.nblk{margin-top:6mm}
+.ntop{display:flex;gap:4mm;align-items:flex-start}
+.big{width:var(--big);height:var(--big);border:.35mm solid var(--gb);position:relative;flex:none;background:#fff}
+.big svg,.dcell svg{position:absolute;inset:0;width:100%;height:100%}
+.big .fb{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:calc(var(--big)*.8);line-height:1}
+.dec{flex:1;min-width:0}
+.dlabel{font-size:3.6mm;color:#555;margin-bottom:1.5mm;display:flex;justify-content:space-between}
+.dlabel b{color:var(--gb)}
+.dgrid{display:flex;flex-wrap:wrap}
+.dcell{width:var(--dc);height:var(--dc);border:.25mm solid var(--gb);position:relative;margin:0 -.25mm -.25mm 0;background:#fff}
+.dcell i{position:absolute;left:.5mm;top:.2mm;font-style:normal;font-size:2.4mm;color:#8a8f93;z-index:2;line-height:1}
+.nomsg{font-size:3.6mm;color:#8a8f93;line-height:1.6;padding-top:2mm}
+.prac{display:flex;flex-direction:column;margin-top:3mm}
+.prac .line{display:flex}
+.prac .cell+.cell{margin-left:-.3mm}
+.prac .line+.line{margin-top:-.3mm}
+.pbody.sh{flex:1;margin-top:3mm;display:flex;flex-direction:column;justify-content:flex-start;align-items:flex-start;gap:6mm;min-height:0}
+.grp.hz{flex-direction:row;gap:3mm;align-items:flex-start}
+.grp.hz .strip{margin-left:0}
+.hgrid{display:flex;flex-direction:column}
+.hgrid .line{display:flex}
+.hgrid .line+.line{margin-top:-.3mm}
+.hgrid .cell+.cell{margin-left:-.3mm;margin-top:0}
+.pbody.nvv{flex:1;margin-top:3mm;display:flex;flex-direction:row-reverse;justify-content:flex-start;align-items:flex-start;gap:5mm;min-height:0}
+.vg{display:flex;flex-direction:column;align-items:center;flex:none}
+.vg .big{flex:none}
+.vcols{display:flex;flex-direction:row-reverse;margin-top:3mm;align-self:stretch;justify-content:center}
+.dvcols{display:flex;flex-direction:row-reverse;margin-left:1.5mm}
+.dcol{display:flex;flex-direction:column}
+.dcol .dcell{margin:0 0 -.25mm 0}
+.dcol+.dcol{margin-right:-.25mm}
+.vnote{writing-mode:vertical-rl;font-size:3.4mm;color:#8a8f93;margin-left:1.5mm;letter-spacing:.5mm}
+.vtot{font-size:3.2mm;color:#555;margin-top:1mm;text-align:center}
+.vtot b{color:var(--gb)}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <div class="seal" aria-hidden="true"><span>筆</span></div>
+      <div><h1>筆順寫字本產生器</h1><p>貼上文章，自動抽出生字，做成有筆順提示的 A4 寫字本</p></div>
+    </div>
+
+    <div class="field">
+      <label class="lbl" for="txt">文章或生字</label>
+      <textarea id="txt" placeholder="貼上文章，或直接輸入要練習的字"></textarea>
+      <div class="row-btns">
+        <button class="ghost" id="btnSample" type="button">放入範例文章</button>
+        <button class="ghost" id="btnClear" type="button">清空</button>
+      </div>
+    </div>
+
+    <div class="status" id="status">貼上文章後，右邊會出現筆順寫字本。</div>
+    <p class="hint" style="margin:-6px 0 16px">沒有數字筆順的字，可以到 <a href="maker.html" style="color:var(--red);font-weight:700">筆順製作</a> 頁對照教育部筆順自己製作。</p>
+
+    <div class="field">
+      <label class="lbl" for="title">標題</label>
+      <input type="text" id="title" value="筆順練習">
+    </div>
+
+    <div class="field">
+      <span class="lbl">版本</span>
+      <div class="seg modes" id="segMode">
+        <button type="button" data-v="num"><span class="mico"><i class="f"></i><i class="l"></i><i></i></span><span>數字筆順<small>大字標出筆順數字與方向，再一筆一筆分解</small></span></button>
+        <button type="button" data-v="official"><span class="mico"><i class="l"></i><i class="l"></i><i class="l"></i></span><span>教育部筆順圖<small>教育部筆順提示圖＋練習直行</small></span></button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="lbl">排版方向</span>
+      <div class="seg" id="segDir">
+        <button type="button" data-v="h">橫式</button>
+        <button type="button" data-v="v">直式</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="lbl">每個字描幾次</span>
+      <div class="stepper"><button type="button" id="repMinus" aria-label="減少">−</button><output id="repOut">3</output><button type="button" id="repPlus" aria-label="增加">＋</button></div>
+      <div class="hint">每個字依序是：黑色範字、淡色描寫字、空格自己寫。</div>
+    </div>
+
+    <div class="field" id="fNum">
+      <span class="lbl">練習格行數</span>
+      <div class="seg" id="segProws">
+        <button type="button" data-v="1">一行</button>
+        <button type="button" data-v="2">兩行</button>
+      </div>
+      <div class="checks" style="margin-top:10px">
+        <label><input type="checkbox" id="cNumbers"> 筆順數字</label>
+        <label><input type="checkbox" id="cArrow"> 方向箭頭</label>
+        <label><input type="checkbox" id="cDecomp"> 筆畫分解</label>
+      </div>
+    </div>
+
+    <div class="field" id="fCols">
+      <span class="lbl">每個字的練習格</span>
+      <div class="seg" id="segCols">
+        <button type="button" data-v="1">一直行</button>
+        <button type="button" data-v="2">兩直行</button>
+      </div>
+    </div>
+
+    <div class="field checks">
+      <label><input type="checkbox" id="cUnique"> 重複的字只練一次</label>
+      <label><input type="checkbox" id="cHeader"> 姓名日期欄</label>
+    </div>
+
+    <div class="field">
+      <span class="lbl">格子樣式</span>
+      <div class="seg" id="segGrid">
+        <button type="button" data-v="tian">田字格</button>
+        <button type="button" data-v="mi">米字格</button>
+        <button type="button" data-v="jiu">九宮格</button>
+        <button type="button" data-v="box">方格</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="lbl">格線顏色</span>
+      <div class="seg" id="segGcolor">
+        <button type="button" data-v="red"><span class="swatch" style="background:#D9534A"></span>紅</button>
+        <button type="button" data-v="green"><span class="swatch" style="background:#4E9A73"></span>綠</button>
+        <button type="button" data-v="gray"><span class="swatch" style="background:#8A8F93"></span>灰</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="lbl">淡色字顏色</span>
+      <div class="seg" id="segTcolor">
+        <button type="button" data-v="gray"><span class="swatch" style="background:#BCC1C5"></span>淡灰</button>
+        <button type="button" data-v="red"><span class="swatch" style="background:#F2A59D"></span>描紅</button>
+        <button type="button" data-v="blue"><span class="swatch" style="background:#A3C4E4"></span>淡藍</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="lbl">格子大小</span>
+      <div class="seg" id="segSize">
+        <button type="button" data-v="22">特大</button>
+        <button type="button" data-v="18">大</button>
+        <button type="button" data-v="15">中</button>
+        <button type="button" data-v="12.5">小</button>
+      </div>
+      <div class="hint" id="sizeHint"></div>
+    </div>
+
+    <div class="field">
+      <span class="lbl">字體</span>
+      <div class="seg" id="segFont">
+        <button type="button" data-v="kai">楷書</button>
+        <button type="button" data-v="biaukai">標楷體（電腦內建）</button>
+      </div>
+      <p class="hint">下載的 Word、PPT 會用電腦裡的「標楷體」。想讓預覽和下載的檔案字體一樣，請選「標楷體（電腦內建）」。</p>
+    </div>
+
+    <p class="hint">「教育部筆順圖」版：提示圖來源為中華民國教育部《國字標準字體筆順學習網》，依「創用CC 姓名標示－非商業性－禁止改作」授權原圖使用，每頁頁尾皆標示出處。</p>
+    <p class="hint">「數字筆順」版：字形與筆畫資料來自開源專案 animCJK（Arphic Public License），並逐字與教育部筆順提示比對，確認一致的字才提供數字筆順；其他字請用「教育部筆順圖」版。</p>
+  </aside>
+
+  <main class="preview"><div class="pages" id="pages"></div></main>
+</div>
+
+<div class="printbar">
+  <div class="pb-top"><span>列印或下載</span><span class="pagecount" id="pagecount"></span></div>
+  <div class="acts">
+    <button class="act fill" id="btnPrint" type="button">列印</button>
+    <button class="act" type="button" id="btnDocx">Word</button>
+    <button class="act" type="button" id="btnPptx">PPT</button>
+    <button class="act" type="button" id="btnPdf">PDF</button>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="strokedata/custom.js"></script>
+<script src="stroke-common.js"></script>
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const pagesEl=$('#pages');
+
+/* 教育部筆順提示圖：strokes/字.png（原圖，未經修改） */
+const STROKE_DIR='strokes/';
+const STROKE_CHARS=new Set(Array.from("䠷一丁七万丈三上下不丏丐丑且丕世丘丙丞丟並丫中丰串丸丹主乂乃久么之乍乎乏乒乓乖乘乙乜九乞也乩乳乾亂了予事二亍于云互五井亙些亞亟亡亢交亥亦亨享京亭亮人什仁仃仄仆仇仉今介仍仔仕他仗付仙仝仞仟代令以仨仰仲仳件任份仿企伉伊伋伍伎伏伐休伕伙伯估伴伶伸伺似伽佃但佇佈位低住佐佑佔何佗佘余佚佛作佝佞佟你佣佩佬佯佰佳併佶佻佼佾使侃侄來侈例侍侏侑侔侖侗供依侮侯侵侶侷便係促俄俊俎俏俐俑俗俘俚俛保俞俟俠信修俯俱俳俸俺俾倀倆倉個倌倍倏們倒倔倖倘候倚倜借倡倣倥倦倨倩倪倫倭值偁偃假偈偉偌偎偏偕做停健側偵偶偷偺偽傀傅傍傑傖傘備傚傢催傭傯傲傳傴債傷傻傾僂僅僇僉像僑僕僖僚僥僧僭僮僱僵價僻儀儂億儆儈儉儋儐儒儔儕儘償儡優儲儷儸儻儼兀允元兄充兆兇先光克兌免兒兔兕兗党兜兢入內全兩八公六兮共兵其具典兼冀冇冉冊再冑冒冕冗冠冢冤冥冪冬冰冶冷冽准凋凌凍凜凝几凡凰凱凳凶凸凹出函刀刁刃分切刈刊刎刑划列初判別刨利刪刮到制刷券刺刻剁剃則剉削剋剌前剎剔剖剛剜剝剩剪剮副割剴創剷剽剿劃劇劈劉劊劌劍劑劓力功加劣助努劫劬劭劻劾勁勃勇勉勒動勖勗勘務勛勝勞募勢勤勦勰勵勸勺勻勾勿包匆匈匍匏匐匕化北匙匝匠匡匣匪匭匯匱匹匾匿區十千卅升午卉半卑卒卓協南博卜卞占卡卣卦卮卯印危即卵卷卸卹卻卿厄厘厚厝原厥厭厲去參又叉及友反叔取受叛叟叡叢口古句另叨叩只叫召叭叮可台叱史右叵司叼吁吃各吆合吉吊吋同名后吏吐向吒吔君吝吞吟吠否吧吩含吭吮吱吳吵吶吸吹吻吼吽吾呀呂呃呆呈告呎呢呦周呱味呵呶呷呸呻呼命咀咂咄咆咋和咎咐咒咕咖咚咦咧咨咩咪咫咬咯咱咳咸咻咽咿哀品哂哄哆哇哈哉哎員哥哦哧哨哩哪哭哮哲哺哼哽唁唄唆唉唏唐唑唔唧唬售唯唱唳唷唸唾啁啃啄商啊問啐啕啖啗啜啞啟啡啣啤啥啦啪啷啻啼啾喀喁喂喃善喇喉喊喋喏喑喔喘喙喚喜喝喟喧喨喪喫喬單喱喲喳喵喻嗅嗆嗇嗎嗑嗓嗔嗚嗜嗝嗟嗡嗣嗤嗥嗦嗨嗩嗯嗲嗶嗷嗽嗾嘀嘆嘈嘉嘍嘎嘏嘔嘖嘗嘛嘟嘩嘬嘮嘯嘰嘲嘴嘶嘹嘻嘿噁噌噎噓噗噘噙噠噢噤噥器噩噪噫噬噯噱噴噶噸噹嚀嚅嚇嚎嚏嚐嚓嚕嚥嚦嚨嚭嚮嚴嚶嚷嚼囀囁囂囈囉囊囌囍囑囓囚四囝回囟因囡囤囪囫困囷囹固囿圃圄圇圈圉國圍園圓圖團圜土在圩圬圭圮圯地圳圻圾址均坊坍坎坏坐坑坡坤坦坩坪坯坳坵坶坷坼垂垃型垌垓垛垠垢垣垮埂埃埋城埒埔埕域埠埤埳埴執埸培基堀堂堅堆堇堊堞堡堤堪堯堰報場堵塊塋塌塑塔塗塘塚塞塢填塭塵塹塾墀境墅墉墊墓墘墜增墟墦墨墩墮墳墾壁壅壇壎壑壓壕壘壙壚壞壟壢壤壩士壬壯壹壺壽夏夔夕外夙多夜夠夢夤夥大天太夫夭央夯失夷夸夾奄奇奈奉奎奏奐契奔奕套奘奚奠奢奧奩奪奮女奴奶奸她好妁如妃妄妊妍妒妓妖妙妝妞妣妤妥妨妮妯妲妳妹妺妻妾姆姊始姍姐姑姒姓委姘姚姜姝姣姥姦姨姪姬姮姻姿威娃娉娌娑娓娘娛娜娟娠娣娥娩娶娼婀婁婆婉婊婕婚婢婦婪婷婿媒媚媛媢媧媯媲媳媼媽媾嫁嫂嫄嫉嫋嫌嫏嫖嫗嫘嫚嫡嫣嫦嫩嫵嫻嬈嬉嬋嬌嬖嬗嬙嬝嬡嬤嬪嬰嬴嬸孀孃子孑孓孔孕字存孚孜孝孟孢季孤孥孩孫孬孰孱孳孵學孺孽孿它宅宇守安宋完宏宓宕宗官宙定宛宜客宣室宥宦宮宰害宴宵家宸容宿寂寄寅密寇富寐寒寓寞察寡寢寤寥實寧寨審寫寬寮寰寵寶寸寺封射將專尉尊尋對導小少尖尚尟尤尪尬就尷尸尹尺尻尼尾尿局屁居屆屈屋屌屍屎屏屐屑展屘屙屜屠屢屣層履屨屬屯山屹屼岌岐岑岔岡岩岫岬岱岳岷岸峇峋峒峙峨峪峭峰島峻峽崁崆崇崎崑崔崖崗崙崛崢崩崴崽嵇嵊嵋嵌嵎嵐嵩嵬嵯嶂嶄嶇嶔嶗嶙嶝嶠嶷嶸嶺嶼嶽巉巍巒巔巖川州巡巢工左巧巨巫差己已巳巴巷巹巽巾巿市布帆希帑帔帕帖帘帙帚帛帝帥帨師席帳帶帷常帽幀幃幄幅幌幔幕幗幛幟幡幢幣幪幫干平年并幸幹幻幼幽幾广庇床序底庖店庚府庠度座庫庭庵庶康庸庾廁廂廄廈廉廊廓廖廚廝廟廠廡廢廣廩廬廳延廷建廿弁弄弈弊弋式弒弓弔引弗弘弛弟弦弧弩弭弱張強弼彀彆彈彊彌彎彖彗彘彙彞形彤彥彩彪彫彬彭彰影彳彷役彼彿往征待徇很徉徊律後徐徑徒得徘徙徜從徠御徨復循徬微徵德徹徼徽心必忌忍忐忑忒忖志忘忙忝忠忡忤忪快忮忱念忸忻忽忿怍怎怏怒怔怕怖怙思怠怡急怦性怨怩怪怯怵恁恃恆恍恐恕恙恚恢恣恤恥恨恩恪恫恬恭息恰恿悃悄悅悉悌悍悒悔悖悚悟悠患您悱悲悴悵悶悸悻悼悽惄情惆惋惑惕惘惚惜惟惠惡惦惰惱惲想惴惶惹惺惻愀愁愆愈愉愍愎意愒愕愚愛愜感愣愧愨愫愬愴愷愾愿慄慇慈慊態慌慍慎慓慕慘慚慝慟慢慣慧慨慫慮慰慳慵慶慷慼慾憂憊憋憎憐憑憒憔憚憤憧憨憩憫憬憲憶憾懂懃懇懈應懊懋懍懟懣懦懨懲懵懶懷懸懺懼懾懿戀戇戈戊戌戍戎成我戒戕或戚戛戟戡戢戥戩截戮戰戲戳戴戶戽戾房所扁扇扈扉手才扎扒打扔托扛扞扣扦扭扮扯扳扶批扼找承技抄抆抉把抑抒抓投抖抗折抨披抬抱抵抹押抽抿拂拄拆拇拈拉拊拋拌拍拎拏拐拒拓拔拖拗拘拙拚招拜括拭拮拯拱拳拴拶拷拼拽拾拿持指挈按挑挖挨挪挫振挲挹挺挽挾捂捅捆捉捌捍捎捏捐捕捧捨捩捫据捱捲捶捷捺捻掀掂掃掄掇授掉掌掏掐排掖掘掙掛掠採探掣接控推掩措掬掮掰揀揄揆揉揍描提插揖揚換揠握揣揩揪揭揮援揶揹搆損搏搐搓搔搖搗搜搞搢搥搦搧搪搬搭搯搶搽搾摀摑摒摔摘摜摟摧摩摭摯摳摶摸摹摺摻摽撂撅撇撈撐撒撓撕撚撞撢撣撤撥撩撫撬播撮撰撲撻撼撿擀擁擂擄擅擇擊擋操擎擒擔擘據擠擢擣擤擦擫擬擯擰擱擲擴擷擺擻擾攀攆攏攔攘攙攛攜攝攢攣攤攪攫攬支收攷攸改攻放政故效敉敏救敕敖敗敘教敝敞敢散敦敬敲整敵敷數敻斂斃文斌斐斑斕斗料斛斜斟斡斤斥斧斫斬斯新斲斷方於施旁旄旅旆旋旌旎族旖旗旛既日旦旨早旬旭旮旯旰旱旺旻昀昂昃昆昇昉昊昌明昏易昔星映春昧昨昭是昱昴昵昶晁時晃晉晌晏晒晚晝晞晤晦晨晬普景晰晴晶晷智晾暄暇暈暉暑暖暗暝暢暨暫暮暱暴暹暾曄曆曇曉曖曙曜曝曠曦曩曰曲曳更曷書曹曼曾替最會月有朋服朔朕朗望朝期朦朧木未末本札朮朱朴朵朽杆杈杉杌李杏材村杓杖杜杞束杪杭杯杰東杲杳杵杷杼松板枇枉枋析枒枕林枚果枝枯枰枴架枷枸柄柏某柑柒染柔柙柚柝柞柢查柩柬柯柱柳柴柵柿栓栖栗校栩株栱核根格栽桀桁桂桃桅框案桌桎桐桑桓桔桕桶桿梁梃梅梆梏梓梔梗條梟梢梧梨梭梯械梱梳梵棄棉棋棍棒棕棗棘棚棟棠棣棧森棰棱棲棵棹棺棻棼椅植椎椏椒椪椰椹椽椿楂楊楓楔楚楝楞楠楣楨楫業極楷楹概榆榔榕榛榜榦榧榨榫榭榮榴榷榻槁槃槊構槌槍槎槐槓槤槨槭槳槽槿樁樂樅樊樓標樞樟模樣樨樵樸樹樺樽橄橇橈橋橘橙機橡橢橫檀檃檄檐檔檜檠檢檣檬檯檳檸檻櫂櫃櫓櫚櫛櫝櫞櫟櫥櫪櫫櫬櫸櫺櫻欄權欒欖欞欠次欣欬欲欷欸欺欽款歃歆歇歉歌歎歐歔歙歟歡止正此步武歧歪歲歷歸歹死歿殂殃殄殆殉殊殖殘殛殞殤殪殫殭殮殯殲段殷殺殼殽殿毀毅毆毋母每毒毓比毖毗毛毫毬毯毳毽氅氆氈氌氏氐民氓氖氛氟氡氣氤氦氧氨氫氬氮氯氰氳水永氾汀汁求汆汊汎汐汕汗汙汛汜汝汞江池污汨汩汪汰汲汴汶決汽汾沁沂沃沅沆沈沉沌沏沐沒沓沖沙沛沫沮沱河沸油治沼沽沾沿況泄泅泉泊泌泐泓法泗泛泠泡波泣泥注泫泮泯泰泱泳泵洄洋洌洎洒洗洙洛洞津洩洪洫洱洲洵洶活洽派流浙浚浞浣浥浦浩浪浬浮浴海浸浹涂涅涇消涉涌涎涓涔涕涪涮涯液涵涸涼淄淅淆淇淋淌淑淒淖淘淙淚淝淞淡淤淦淨淩淪淫淬淮深淳淵混淹淺添淼清渙渚減渝渠渡渣渤渥渦渫測渭港渲渴游渺渾湃湄湊湍湎湔湖湘湛湧湮湯湳溉源準溘溜溝溟溢溥溪溫溯溲溴溶溺溼溽滂滄滅滇滋滌滎滑滓滔滕滫滬滯滲滴滷滸滾滿漁漂漆漉漏漓演漕漚漠漢漣漩漪漫漬漯漱漲漳漶漸漾漿潁潑潔潘潛潞潟潢潤潦潭潮潰潸潺潼澀澄澆澇澈澎澗澠澡澣澤澧澮澱澳澹激濁濂濃濕濘濛濟濠濡濤濫濬濯濱濺濾瀆瀉瀋瀏瀑瀕瀘瀚瀛瀝瀟瀣瀦瀧瀨瀰瀲瀾灌灑灕灘灝灣灤灩火灰灶灸灼災炊炎炒炔炕炙炤炫炬炭炮炯炳炷炸為烈烊烏烘烙烝烤烯烴烷烹烽焉焊焙焚無焦焰焱然焿煉煌煎煒煙煜煞煠煢煤煥煦照煩煬煮煲煽熄熊熏熒熔熙熟熠熨熬熱熹熾燁燃燄燈燉燊燎燐燒燔燕燙燜營燠燥燦燧燬燭燮燴燹燻燼燾爆爍爐爛爨爪爬爭爰爵父爸爹爺爻爽爾牆片版牋牌牒牖牘牙牛牝牟牠牡牢牧物牯牲牴牷特牽牾犀犁犄犍犒犖犛犢犧犬犯犰狀狁狂狄狎狐狒狗狙狠狡狩狳狷狸狹狺狼狽猓猖猙猛猜猝猢猥猩猴猶猷猻猾猿獃獄獅獎獐獒獗獠獨獪獰獲獵獷獸獺獻獼獾玀玁玄率玉王玕玖玟玦玨玩玫玲玳玷玻珀珂珈珊珍珞珠珥珩珪班珮現球琅理琇琉琊琍琛琢琤琥琦琨琪琬琮琰琱琳琴琵琶琺琿瑁瑄瑋瑕瑗瑙瑚瑛瑜瑞瑟瑣瑤瑩瑪瑯瑰瑾璀璃璇璉璋璐璜璞璣璦璧璨璩璫環璽璿瓊瓏瓔瓜瓞瓠瓢瓣瓤瓦瓮瓶瓷甄甌甍甑甕甘甚甜生產甥甦用甩甫甬甭田由甲申男甸町甽畀界畎畏畔留畚畛畜畝畢略畦番畫畬異當畸畹畿疆疇疊疋疏疑疔疙疚疝疢疣疤疥疫疱疲疳疵疸疹疼疽疾痀痂病症痊痍痔痕痘痙痛痞痠痢痣痤痧痰痱痲痴痺痼痾痿瘀瘁瘉瘋瘌瘍瘓瘖瘝瘞瘟瘠瘡瘤瘦瘧瘩瘴瘸瘼療癆癇癌癒癖癘癟癢癤癥癩癬癮癰癱癲癸登發白百皂的皆皇皈皋皎皓皖皙皚皤皮皰皴皸皺皿盂盃盅盆盈益盍盎盒盔盛盜盞盟盡監盤盥盦盧盪目盯盲直相盹盼盾省眄眇眈眉眊看眚真眠眥眨眩眶眷眸眺眼眾睇睏睛睜睞睡睢督睥睦睨睪睫睬睹睽睿瞄瞅瞇瞋瞌瞎瞑瞞瞟瞠瞥瞧瞪瞬瞭瞰瞳瞵瞷瞻瞼瞽瞿矇矍矓矗矚矛矜矢矣知矩短矮矯矱石矸矻矽砂砌砍砒研砝砥砧砭砰砲破砵砷砸硃硓硝硫硬确硯硼碇碉碌碎碑碓碗碘碟碣碧碩碰碳碴確碼碾磁磅磊磋磐磔磕磚磧磨磬磯磴磷磺礁礎礙礦礨礪礫礬礱礴示社祀祁祂祆祇祈祉祐祕祖祗祚祛祜祝神祟祠祥祧票祭祺祼祿禁禍禎福禦禧禨禪禮禱禳禹禺禽禾禿秀私秈秉秋科秒秘租秣秤秦秧秩秭移稀稅稈程稍稔稗稚稜稞稟稠種稱稷稹稻稼稽稿穀穆穌積穎穗穠穡穢穩穫穴究穹空穿突窄窆窈窒窕窖窗窘窟窠窣窩窪窬窮窯窳窸窺窿竄竅竇竊立站竟章竣童竦竭端競竹竺竽竿笄笆笈笏笑笙笛笞笠符笨笫第笳筆等筊筋筌筍筏筐筑筒答策筠筧筮筱筲筵筷箇箋箍箏箔箕算箜箝管箭箱箴箸節篁範篆篇築篋篌篙篛篝篠篡篣篤篥篦篩篳篷篾簇簌簍簏簑簞簟簡簣簧簪簫簷簸簽簾簿籀籃籌籍籐籙籜籟籠籤籥籩籬籮籲米籽粉粑粒粕粗粘粟粥粱粲粳粵粹粼粽精粿糊糌糕糖糗糙糜糝糞糟糠糢糧糨糬糯糰糴糶糸系糾紀紂約紅紆紇紈紉紊紋納紐紓純紕紗紘紙級紛紜紝素紡索紫紮累細紳紹紺紼紿絀終絃組絆結絕絛絜絞絡絢給絨絮統絲絳絹絻綁綃綏綑經綜綞綠綢綣綬維綰綱網綴綵綸綹綺綻綽綾綿緇緊緋緒緘線緝緞締緡緣編緩緬緯緲練緹緻縈縊縋縐縑縛縝縞縟縣縫縮縱縲縴縵縷縹總績繁繃繅繆繇繒織繕繚繞繡繩繪繫繭繯繳繹繼繽繾纂續纍纏纓纔纖纛纜缶缸缺缽罄罅罈罌罍罏罐罔罕罟罡罣罩罪置罰署罵罷罹羅羆羈羊羋羌美羑羔羚羞群羨義羯羲羶羸羹羼羽羿翁翅翊翌翎習翔翕翟翠翡翦翩翫翮翰翱翳翹翻翼耀老考耄者耆耋而耍耐耒耕耗耘耙耜耦耨耳耵耶耷耽耿聃聆聊聒聖聘聚聞聯聰聱聲聳聵聶職聹聽聾聿肄肅肆肇肉肋肌肓肖肘肚肛肝股肢肥肩肪肫肯肱育肴肺肽胃胄背胎胖胚胛胝胞胡胤胥胭胯胰胱胳胴胸胺胼能脂脅脆脈脊脖脛脣脩脫脯脹脾腆腋腌腎腐腑腓腔腕腥腦腩腫腮腰腱腳腴腸腹腺腿膀膈膊膏膚膛膜膝膠膨膩膳膺膽膾膿臀臂臃臆臉臊臍臏臘臚臞臟臠臢臣臥臧臨自臬臭至致臺臻臼臾舀舂舅與興舉舊舌舍舐舒舔舛舜舞舟舢舨航舫般舳舴舵舶舷舸船舺艇艉艋艘艙艤艦艫艮良艱色艾芃芊芋芍芎芒芙芝芟芡芥芬芭芮芯芰花芳芷芸芹芻芽芾苑苒苓苔苕苗苛苜苞苟苡苣若苦苧苫苯英苹苻茁茂范茄茅茆茉茗茜茨茫茭茯茱茲茴茵茶茸茹茼荀荃荇草荊荏荐荑荒荔荳荷荸荻荼莆莉莊莎莒莓莖莘莞莠莢莧莪莫莽菁菅菇菊菌菖菜菟菠菡菩菫華菰菱菲菴菸菽萃萄萊萋萌萍萎萏萬萱萵萸萼落葆葉著葚葛葡董葦葩葫葬葭葯葳葵葷葺蒂蒐蒔蒙蒜蒞蒟蒡蒯蒲蒴蒸蒹蒺蒻蒼蒿蓀蓁蓄蓆蓉蓊蓋蓑蓓蓖蓧蓬蓮蓼蓽蓿蔑蔓蔔蔗蔘蔚蔡蔣蔥蔬蔭蔻蔽蕁蕃蕈蕉蕊蕎蕙蕞蕢蕤蕨蕩蕪蕭蕾薄薇薈薊薌薏薑薔薙薛薜薤薦薨薩薪薯薰薺藉藍藏藐藕藜藝藤藥藩藪藷藹藺藻蘄蘅蘆蘇蘊蘋蘑蘗蘚蘭蘸蘿虎虐虔處虛虜虞號虢虧虫虯虱虹虺虻蚊蚋蚌蚍蚓蚜蚣蚤蚧蚩蚪蚯蚱蚵蚶蛀蛄蛆蛇蛉蛋蛐蛔蛙蛛蛟蛤蛩蛭蛹蛺蛻蛾蜀蜂蜃蜆蜇蜈蜉蜊蜋蜍蜒蜓蜘蜚蜜蜡蜢蜥蜩蜴蜷蜻蜿蝌蝕蝗蝙蝟蝠蝣蝦蝨蝴蝶蝸螂螃螅螈融螗螞螟螢螫螯螳螺螻螽蟀蟄蟆蟈蟊蟋蟑蟒蟠蟪蟬蟯蟲蟳蟹蟻蟾蠅蠍蠑蠔蠕蠟蠡蠢蠣蠱蠶蠹蠻蠼血衊行衍術衕衖街衙衚衛衝衡衢衣表衩衫衰衲衷衹衽衾衿袁袂袈袋袍袒袖袞袪被袱裁裂裊裎裔裕裘裙補裝裟裡裨裱裳裴裸裹裼製裾褂複褊褐褒褓褚褡褥褪褫褲褳褶褸褻襁襄襖襞襟襠襤襪襬襯襲西要覃覆覈見規覓視覦親覬覲覷覺覽觀角觔解觥觫觳觴觸觿言訂訃訇計訊訌討訏訐訓訕訖託記訛訝訟訣訥訪設許訴訶診註証訾詁詆詈詎詐詔評詛詞詠詡詢詣試詩詫詬詭詮詰話該詳詹詼誄誅誆誇誌認誑誓誕誘語誠誡誣誤誥誦誨說誰課誹誼調諂諄談諉請諍諒諕論諛諜諡諢諦諧諫諭諮諱諳諶諷諸諺諼諾謀謁謂謄謅謊謎謏謐謔謗謙講謝謠謨謫謬謳謹謾譁證譎譏譖識譚譜譟警譬譯議譴護譽讀變讋讎讒讓讖讚讜讞谷谿豁豆豇豈豉豌豎豐豔豕豚象豢豪豫豬豹豺貂貉貊貌貍貓貝貞負財貢貧貨販貪貫責貯貲貳貴貶買貸費貼貽貿賀賁賂賃賄賅資賈賊賑賒賓賜賞賠賡賢賣賤賦質賬賭賴賸賺購賽贄贅贈贊贍贏贐贓贖贗贛赤赦赧赫赭走赳赴起趁趄超越趑趕趙趟趣趨足趴趵趺趾趿跂跆跋跌跎跏跑跖跚跛距跟跡跤跨跩跪跫路跳跺跼跽踅踉踏踐踘踝踞踟踢踦踩踫踮踰踱踴踵踹踽蹂蹄蹇蹈蹉蹊蹋蹌蹐蹓蹕蹙蹚蹟蹠蹣蹤蹦蹧蹩蹬蹭蹲蹴蹶蹺蹼躁躂躅躇躉躊躋躍躑躓躕躡躪身躬躲躺軀車軋軌軍軒軔軛軟軫軸軻軼軾較載輊輒輓輔輕輛輜輝輞輟輦輩輪輯輳輸輻輾輿轂轄轅轆轉轍轎轔轟轡轤辛辜辟辣辦辨辭辮辯辰辱農迂迄迅迆迍迎近迒迓返迕迢迤迥迦迨迪迫迭述迴迷迸迺追退送逃逄逅逆逋逍透逐逑途逕逖逗這通逛逝逞速造逡逢連逭逮週進逵逶逸逼逾遁遂遄遇遊運遍過遏遐遑遒道達違遘遙遛遜遝遞遠遢遣遨適遭遮遯遲遴遵遶遷選遺遼遽避邀邁邂邃還邅邇邈邊邋邏邐邑邕邢那邦邪邯邰邱邵邸郁郊郎郛郝郡郢部郭郵都鄂鄉鄒鄔鄘鄙鄞鄢鄧鄭鄯鄰鄱鄲鄹鄺酆酈酉酊酋酌配酒酗酚酡酢酣酥酩酪酬酮酯酲酵酶酷酸酹醃醅醇醉醋醍醐醒醚醛醜醞醢醣醫醬醮醯醰醱醴醺釀釁采釉釋里重野量釐金釗釘釜針釣釦釧釵鈉鈍鈐鈑鈔鈕鈞鈣鈦鈴鈷鈸鈺鈽鈾鈿鉀鉅鉋鉑鉗鉚鉛鉤鉦鉧鉸鉻銀銃銅銑銓銖銘銜銬銲銳銷銻銼鋁鋃鋅鋌鋏鋒鋙鋤鋪鋰鋸鋼錄錐錕錘錙錚錠錡錢錦錨錫錮錯錳錶鍇鍊鍋鍍鍔鍘鍛鍥鍬鍰鍵鍺鍾鎂鎊鎔鎖鎗鎘鎚鎢鎧鎩鎬鎮鎰鎳鏃鏇鏈鏍鏑鏖鏗鏘鏜鏝鏞鏟鏡鏢鏤鏹鏽鐃鐐鐘鐙鐫鐮鐲鐳鐵鐸鐺鑄鑊鑑鑒鑠鑣鑪鑫鑰鑱鑲鑷鑼鑽鑾鑿長門閂閃閉開閎閏閑閒間閔閘閡閣閤閥閨閩閫閭閱閹閻閼闃闆闇闈闊闋闌闐闓闔闕闖關闡闢闥阜阡阢阨阪阮阱防阻阿陀附陋陌降限陘陛陝陞陟陡院陣除陪陰陲陳陴陵陶陷陸陽隄隅隆隈隉隊隋隍階隔隕隘隙際障隤隧隨險隰隱隳隴隸隹隻隼雀雁雄雅集雇雉雋雌雍雎雒雕雖雙雛雜雝雞離難雨雩雪雯雰雱雲零雷雹電需霄霆震霈霉霍霎霏霑霓霖霜霞霤霧霪霰露霸霹霽霾靂靄靈青靖靚靛靜非靠靡面靦靨革靳靴靶靼鞅鞋鞍鞏鞘鞠鞣鞦鞭韁韃韆韋韌韓韙韜韞韭音韶韻響頁頂頃項順頇須頊頌頎頏預頑頒頓頗領頡頤頦頫頭頰頷頸頹頻顆題額顎顏顓願顙顛類顢顥顧顫顯顰顱顴風颭颯颱颳颶颺颼飄飆飛食飢飧飩飪飫飭飯飲飴飼飽飾餃餅餉養餌餐餑餒餓餔餘餚餛餞餡館餬餮餳餵餽餾餿饃饅饈饉饋饌饑饒饕饗饘饜饞首馗馘香馥馨馬馭馮馱馳馴駁駐駑駒駕駘駙駛駝駟駢駭駱駸駿騁騂騃騅騎騏騖騙騫騮騰騷騾驀驁驂驃驅驊驍驕驗驚驛驟驢驤驥驪骨骯骰骷骸骼骾髀髏髒髓體髖高髟髡髣髦髫髭髮髯髴髹髻鬃鬆鬈鬍鬚鬟鬢鬣鬥鬧鬨鬩鬮鬱鬲鬼魁魂魄魅魍魎魏魑魔魘魚魠魨魯魷鮑鮪鮫鮭鮮鯀鯁鯇鯈鯉鯊鯖鯗鯛鯝鯤鯧鯨鯰鯽鰈鰍鰓鰣鰥鰭鰱鰲鰹鰻鰾鱈鱉鱒鱔鱖鱗鱷鱸鳥鳧鳩鳳鳴鳶鴆鴇鴉鴒鴕鴛鴝鴞鴟鴣鴦鴨鴻鴿鵑鵜鵝鵠鵡鵪鵬鵰鵲鶉鶘鶩鶯鶴鶺鶻鶼鷂鷓鷗鷥鷦鷯鷲鷸鷹鷺鸚鸛鸝鸞鹵鹹鹼鹽鹿麂麇麈麋麒麓麗麝麟麤麥麩麰麴麵麻麼麾黃黌黍黎黏黑黔默黛黜黝點黟黠黥黨黯黴黷黹黻黼黽黿鼇鼎鼐鼓鼕鼙鼠鼬鼯鼴鼻鼾齊齋齎齏齒齔齕齜齟齡齣齦齧齪齬齲齷龍龐龔龕龜龠龢𥑮"));
+const STROKE_SIZE={"償":[95,725],"儡":[95,725],"優":[95,725],"儲":[95,725],"儷":[95,725],"儸":[95,725],"儻":[95,725],"儼":[95,725],"勵":[95,725],"勸":[95,725],"叢":[95,725],"嚀":[95,725],"嚅":[95,725],"嚇":[95,725],"嚎":[95,725],"嚏":[95,725],"嚐":[95,725],"嚓":[95,725],"嚕":[95,725],"嚥":[95,725],"嚦":[95,725],"嚨":[95,725],"嚭":[95,725],"嚮":[95,725],"嚴":[95,725],"嚶":[95,725],"嚷":[95,725],"嚼":[95,725],"囀":[95,725],"囁":[95,725],"囂":[95,725],"囈":[95,725],"囉":[95,725],"囊":[95,725],"囌":[95,725],"囍":[95,725],"囑":[95,725],"囓":[95,725],"壎":[95,725],"壑":[95,725],"壓":[95,725],"壕":[95,725],"壘":[95,725],"壙":[95,725],"壚":[95,725],"壞":[95,725],"壟":[95,725],"壢":[95,725],"壤":[95,725],"壩":[95,725],"夔":[95,725],"嬤":[95,725],"嬪":[95,725],"嬰":[95,725],"嬸":[95,725],"孀":[95,725],"孃":[95,725],"孺":[95,725],"孽":[95,725],"孿":[95,725],"寵":[95,725],"寶":[95,725],"尷":[95,725],"屨":[95,725],"屬":[95,725],"嶷":[95,725],"嶸":[95,725],"嶺":[95,725],"嶼":[95,725],"嶽":[95,725],"巉":[95,725],"巍":[95,725],"巒":[95,725],"巔":[95,725],"巖":[95,725],"幪":[95,725],"幫":[95,725],"廬":[95,725],"廳":[95,725],"彌":[95,725],"彎":[95,725],"彞":[95,725],"徽":[95,725],"慰":[95,725],"懂":[95,725],"懃":[95,725],"懇":[95,725],"應":[95,725],"懋":[95,725],"懟":[95,725],"懣":[95,725],"懦":[95,725],"懨":[95,725],"懲":[95,725],"懵":[95,725],"懶":[95,725],"懷":[95,725],"懸":[95,725],"懺":[95,725],"懼":[95,725],"懾":[95,725],"懿":[95,725],"戀":[95,725],"戇":[95,725],"戲":[95,725],"戳":[95,725],"戴":[95,725],"擊":[95,725],"擎":[95,725],"擘":[95,725],"擠":[95,725],"擢":[95,725],"擣":[95,725],"擤":[95,725],"擦":[95,725],"擫":[95,725],"擬":[95,725],"擯":[95,725],"擰":[95,725],"擱":[95,725],"擲":[95,725],"擴":[95,725],"擷":[95,725],"擺":[95,725],"擻":[95,725],"擾":[95,725],"攀":[95,725],"攆":[95,725],"攏":[95,725],"攔":[95,725],"攘":[95,725],"攙":[95,725],"攛":[95,725],"攜":[95,725],"攝":[95,725],"攢":[95,725],"攣":[95,725],"攤":[95,725],"攪":[95,725],"攫":[95,725],"攬":[95,725],"斂":[95,725],"斃":[95,725],"斕":[95,725],"斷":[95,725],"旛":[95,725],"曖":[95,725],"曙":[95,725],"曜":[95,725],"曝":[95,725],"曠":[95,725],"曦":[95,725],"曩":[95,725],"朦":[95,725],"朧":[95,725],"檀":[95,725],"檃":[95,725],"檄":[95,725],"檐":[95,725],"檔":[95,725],"檜":[95,725],"檠":[95,725],"檢":[95,725],"檣":[95,725],"檬":[95,725],"檯":[95,725],"檳":[95,725],"檸":[95,725],"檻":[95,725],"櫂":[95,725],"櫃":[95,725],"櫓":[95,725],"櫚":[95,725],"櫛":[95,725],"櫝":[95,725],"櫞":[95,725],"櫟":[95,725],"櫥":[95,725],"櫪":[95,725],"櫫":[95,725],"櫬":[95,725],"櫸":[95,725],"櫺":[95,725],"櫻":[95,725],"欄":[95,725],"權":[95,725],"欒":[95,725],"欖":[95,725],"欞":[95,725],"歟":[95,725],"歡":[95,725],"歸":[95,725],"殭":[95,725],"殮":[95,725],"殯":[95,725],"殲":[95,725],"氈":[95,725],"氌":[95,725],"澀":[95,725],"濕":[95,725],"濘":[95,725],"濛":[95,725],"濟":[95,725],"濠":[95,725],"濡":[95,725],"濤":[95,725],"濫":[95,725],"濬":[95,725],"濯":[95,725],"濱":[95,725],"濺":[95,725],"濾":[95,725],"瀆":[95,725],"瀉":[95,725],"瀋":[95,725],"瀏":[95,725],"瀑":[95,725],"瀕":[95,725],"瀘":[95,725],"瀚":[95,725],"瀛":[95,725],"瀝":[95,725],"瀟":[95,725],"瀣":[95,725],"瀦":[95,725],"瀧":[95,725],"瀨":[95,725],"瀰":[95,725],"瀲":[95,725],"瀾":[95,725],"灌":[95,725],"灑":[95,725],"灕":[95,725],"灘":[95,725],"灝":[95,725],"灣":[95,725],"灤":[95,725],"灩":[95,725],"營":[95,725],"燠":[95,725],"燥":[95,725],"燦":[95,725],"燧":[95,725],"燬":[95,725],"燭":[95,725],"燮":[95,725],"燴":[95,725],"燹":[95,725],"燻":[95,725],"燼":[95,725],"燾":[95,725],"爆":[95,725],"爍":[95,725],"爐":[95,725],"爛":[95,725],"爨":[95,725],"爵":[95,725],"牆":[95,725],"牘":[95,725],"犢":[95,725],"犧":[95,725],"獰":[95,725],"獲":[95,725],"獵":[95,725],"獷":[95,725],"獸":[95,725],"獺":[95,725],"獻":[95,725],"獼":[95,725],"獾":[95,725],"玀":[95,725],"玁":[95,725],"璐":[95,725],"璦":[95,725],"璧":[95,725],"璨":[95,725],"璩":[95,725],"璫":[95,725],"環":[95,725],"璽":[95,725],"璿":[95,725],"瓊":[95,725],"瓏":[95,725],"瓔":[95,725],"瓣":[95,725],"瓤":[95,725],"甑":[95,725],"甕":[95,725],"疆":[95,725],"疇":[95,725],"疊":[95,725],"療":[95,725],"癆":[95,725],"癇":[95,725],"癌":[95,725],"癒":[95,725],"癖":[95,725],"癘":[95,725],"癟":[95,725],"癢":[95,725],"癤":[95,725],"癥":[95,725],"癩":[95,725],"癬":[95,725],"癮":[95,725],"癰":[95,725],"癱":[95,725],"癲":[95,725],"皤":[95,725],"盪":[95,725],"瞞":[95,725],"瞧":[95,725],"瞪":[95,725],"瞬":[95,725],"瞭":[95,725],"瞰":[95,725],"瞳":[95,725],"瞵":[95,725],"瞷":[95,725],"瞻":[95,725],"瞼":[95,725],"瞽":[95,725],"瞿":[95,725],"矇":[95,725],"矍":[95,725],"矓":[95,725],"矗":[95,725],"矚":[95,725],"矯":[95,725],"矱":[95,725],"磯":[95,725],"磴":[95,725],"磷":[95,725],"磺":[95,725],"礁":[95,725],"礎":[95,725],"礙":[95,725],"礦":[95,725],"礨":[95,725],"礪":[95,725],"礫":[95,725],"礬":[95,725],"礱":[95,725],"礴":[95,725],"禮":[95,725],"禱":[95,725],"禳":[95,725],"穗":[95,725],"穠":[95,725],"穡":[95,725],"穢":[95,725],"穩":[95,725],"穫":[95,725],"窿":[95,725],"竄":[95,725],"竅":[95,725],"竇":[95,725],"竊":[95,725],"競":[95,725],"篠":[95,725],"篳":[95,725],"篷":[95,725],"篾":[95,725],"簇":[95,725],"簌":[95,725],"簍":[95,725],"簏":[95,725],"簞":[95,725],"簟":[95,725],"簡":[95,725],"簣":[95,725],"簧":[95,725],"簪":[95,725],"簫":[95,725],"簷":[95,725],"簸":[95,725],"簽":[95,725],"簾":[95,725],"簿":[95,725],"籀":[95,725],"籃":[95,725],"籌":[95,725],"籍":[95,725],"籐":[95,725],"籙":[95,725],"籜":[95,725],"籟":[95,725],"籠":[95,725],"籤":[95,725],"籥":[95,725],"籩":[95,725],"籬":[95,725],"籮":[95,725],"籲":[95,725],"糙":[95,725],"糜":[95,725],"糝":[95,725],"糞":[95,725],"糟":[95,725],"糠":[95,725],"糢":[95,725],"糧":[95,725],"糨":[95,725],"糬":[95,725],"糯":[95,725],"糰":[95,725],"糴":[95,725],"糶":[95,725],"縫":[95,725],"縮":[95,725],"縱":[95,725],"縲":[95,725],"縴":[95,725],"縵":[95,725],"縷":[95,725],"縹":[95,725],"總":[95,725],"績":[95,725],"繁":[95,725],"繃":[95,725],"繅":[95,725],"繆":[95,725],"繇":[95,725],"繒":[95,725],"織":[95,725],"繕":[95,725],"繚":[95,725],"繞":[95,725],"繡":[95,725],"繩":[95,725],"繪":[95,725],"繫":[95,725],"繭":[95,725],"繯":[95,725],"繳":[95,725],"繹":[95,725],"繼":[95,725],"繽":[95,725],"繾":[95,725],"纂":[95,725],"續":[95,725],"纍":[95,725],"纏":[95,725],"纓":[95,725],"纔":[95,725],"纖":[95,725],"纛":[95,725],"纜":[95,725],"罄":[95,725],"罅":[95,725],"罈":[95,725],"罌":[95,725],"罍":[95,725],"罏":[95,725],"罐":[95,725],"羅":[95,725],"羆":[95,725],"羈":[95,725],"羶":[95,725],"羸":[95,725],"羹":[95,725],"羼":[95,725],"翳":[95,725],"翹":[95,725],"翻":[95,725],"翼":[95,725],"耀":[95,725],"聯":[95,725],"聰":[95,725],"聱":[95,725],"聲":[95,725],"聳":[95,725],"聵":[95,725],"聶":[95,725],"職":[95,725],"聹":[95,725],"聽":[95,725],"聾":[95,725],"膺":[95,725],"膽":[95,725],"膾":[95,725],"膿":[95,725],"臀":[95,725],"臂":[95,725],"臃":[95,725],"臆":[95,725],"臉":[95,725],"臊":[95,725],"臍":[95,725],"臏":[95,725],"臘":[95,725],"臚":[95,725],"臞":[95,725],"臟":[95,725],"臠":[95,725],"臢":[95,725],"臨":[95,725],"舉":[95,725],"舊":[95,725],"艤":[95,725],"艦":[95,725],"艫":[95,725],"艱":[95,725],"蕾":[95,725],"薄":[95,725],"薇":[95,725],"薈":[95,725],"薊":[95,725],"薏":[95,725],"薑":[95,725],"薔":[95,725],"薙":[95,725],"薛":[95,725],"薜":[95,725],"薤":[95,725],"薦":[95,725],"薨":[95,725],"薩":[95,725],"薪":[95,725],"薯":[95,725],"薰":[95,725],"薺":[95,725],"藉":[95,725],"藍":[95,725],"藏":[95,725],"藐":[95,725],"藕":[95,725],"藜":[95,725],"藝":[95,725],"藤":[95,725],"藥":[95,725],"藩":[95,725],"藪":[95,725],"藷":[95,725],"藹":[95,725],"藺":[95,725],"藻":[95,725],"蘄":[95,725],"蘅":[95,725],"蘆":[95,725],"蘇":[95,725],"蘊":[95,725],"蘋":[95,725],"蘑":[95,725],"蘗":[95,725],"蘚":[95,725],"蘭":[95,725],"蘸":[95,725],"蘿":[95,725],"虧":[95,725],"螫":[95,725],"螯":[95,725],"螳":[95,725],"螺":[95,725],"螻":[95,725],"螽":[95,725],"蟀":[95,725],"蟄":[95,725],"蟆":[95,725],"蟈":[95,725],"蟊":[95,725],"蟋":[95,725],"蟑":[95,725],"蟒":[95,725],"蟠":[95,725],"蟪":[95,725],"蟬":[95,725],"蟯":[95,725],"蟲":[95,725],"蟳":[95,725],"蟹":[95,725],"蟻":[95,725],"蟾":[95,725],"蠅":[95,725],"蠍":[95,725],"蠑":[95,725],"蠔":[95,725],"蠕":[95,725],"蠟":[95,725],"蠡":[95,725],"蠢":[95,725],"蠣":[95,725],"蠱":[95,725],"蠶":[95,725],"蠹":[95,725],"蠻":[95,725],"蠼":[95,725],"衊":[95,725],"衢":[95,725],"製":[196,3535],"褻":[95,725],"襄":[95,725],"襖":[95,725],"襞":[95,725],"襟":[95,725],"襠":[95,725],"襤":[95,725],"襪":[95,725],"襬":[95,725],"襯":[95,725],"襲":[95,725],"覆":[95,725],"覈":[95,725],"覬":[95,725],"覲":[95,725],"覷":[95,725],"覺":[95,725],"覽":[95,725],"觀":[95,725],"觳":[95,725],"觴":[95,725],"觸":[95,725],"觿":[95,725],"謄":[95,725],"謅":[95,725],"謊":[95,725],"謎":[95,725],"謏":[95,725],"謐":[95,725],"謗":[95,725],"謙":[95,725],"講":[95,725],"謝":[95,725],"謠":[95,725],"謨":[95,725],"謫":[95,725],"謬":[95,725],"謳":[95,725],"謹":[95,725],"謾":[95,725],"譁":[95,725],"證":[95,725],"譎":[95,725],"譏":[95,725],"譖":[95,725],"識":[95,725],"譚":[95,725],"譜":[95,725],"譟":[95,725],"警":[95,725],"譬":[95,725],"譯":[95,725],"議":[95,725],"譴":[95,725],"護":[95,725],"譽":[95,725],"讀":[95,725],"變":[95,725],"讋":[95,725],"讎":[95,725],"讒":[95,725],"讓":[95,725],"讖":[95,725],"讚":[95,725],"讜":[95,725],"讞":[95,725],"谿":[95,725],"豁":[95,725],"豐":[95,725],"豔":[95,725],"賸":[95,725],"賺":[95,725],"購":[95,725],"賽":[95,725],"贄":[95,725],"贅":[95,725],"贈":[95,725],"贊":[95,725],"贍":[95,725],"贏":[95,725],"贐":[95,725],"贓":[95,725],"贖":[95,725],"贗":[95,725],"贛":[95,725],"趨":[95,725],"蹇":[95,725],"蹈":[95,725],"蹉":[95,725],"蹊":[95,725],"蹋":[95,725],"蹌":[95,725],"蹐":[95,725],"蹓":[95,725],"蹕":[95,725],"蹙":[95,725],"蹚":[95,725],"蹟":[95,725],"蹠":[95,725],"蹣":[95,725],"蹤":[95,725],"蹦":[95,725],"蹧":[95,725],"蹩":[95,725],"蹬":[95,725],"蹭":[95,725],"蹲":[95,725],"蹴":[95,725],"蹶":[95,725],"蹺":[95,725],"蹼":[95,725],"躁":[95,725],"躂":[95,725],"躅":[95,725],"躇":[95,725],"躉":[95,725],"躊":[95,725],"躋":[95,725],"躍":[95,725],"躑":[95,725],"躓":[95,725],"躕":[95,725],"躡":[95,725],"躪":[95,725],"軀":[95,725],"輾":[95,725],"輿":[95,725],"轂":[95,725],"轄":[95,725],"轅":[95,725],"轆":[95,725],"轉":[95,725],"轍":[95,725],"轎":[95,725],"轔":[95,725],"轟":[95,725],"轡":[95,725],"轤":[95,725],"辭":[95,725],"辮":[95,725],"辯":[95,725],"遽":[95,725],"避":[95,725],"邀":[95,725],"邁":[95,725],"邂":[95,725],"邃":[95,725],"還":[95,725],"邅":[95,725],"邇":[95,725],"邈":[95,725],"邊":[95,725],"邋":[95,725],"邏":[95,725],"邐":[95,725],"鄹":[95,725],"鄺":[95,725],"酆":[95,725],"酈":[95,725],"醚":[95,725],"醛":[95,725],"醜":[95,725],"醞":[95,725],"醢":[95,725],"醣":[95,725],"醫":[95,725],"醬":[95,725],"醮":[95,725],"醯":[95,725],"醰":[95,725],"醱":[95,725],"醴":[95,725],"醺":[95,725],"釀":[95,725],"釁":[95,725],"釋":[95,725],"釐":[95,725],"錘":[95,725],"錨":[95,725],"鍇":[95,725],"鍊":[95,725],"鍋":[95,725],"鍍":[95,725],"鍔":[95,725],"鍘":[95,725],"鍛":[95,725],"鍥":[95,725],"鍬":[95,725],"鍰":[95,725],"鍵":[95,725],"鍾":[95,725],"鎂":[95,725],"鎊":[95,725],"鎔":[95,725],"鎖":[95,725],"鎗":[95,725],"鎘":[95,725],"鎚":[95,725],"鎢":[95,725],"鎧":[95,725],"鎩":[95,725],"鎬":[95,725],"鎮":[95,725],"鎰":[95,725],"鎳":[95,725],"鏃":[95,725],"鏇":[95,725],"鏈":[95,725],"鏍":[95,725],"鏑":[95,725],"鏖":[95,725],"鏗":[95,725],"鏘":[95,725],"鏜":[95,725],"鏝":[95,725],"鏞":[95,725],"鏟":[95,725],"鏡":[95,725],"鏢":[95,725],"鏤":[95,725],"鏹":[95,725],"鏽":[95,725],"鐃":[95,725],"鐐":[95,725],"鐘":[95,725],"鐙":[95,725],"鐫":[95,725],"鐮":[95,725],"鐲":[95,725],"鐳":[95,725],"鐵":[95,725],"鐸":[95,725],"鐺":[95,725],"鑄":[95,725],"鑊":[95,725],"鑑":[95,725],"鑒":[95,725],"鑠":[95,725],"鑣":[95,725],"鑪":[95,725],"鑫":[95,725],"鑰":[95,725],"鑱":[95,725],"鑲":[95,725],"鑷":[95,725],"鑼":[95,725],"鑽":[95,725],"鑾":[95,725],"鑿":[95,725],"闃":[95,725],"闆":[95,725],"闇":[95,725],"闈":[95,725],"闊":[95,725],"闋":[95,725],"闌":[95,725],"闐":[95,725],"闓":[95,725],"闔":[95,725],"闕":[95,725],"闖":[95,725],"關":[95,725],"闡":[95,725],"闢":[95,725],"闥":[95,725],"隰":[95,725],"隱":[95,725],"隳":[95,725],"隴":[95,725],"隸":[95,725],"雖":[95,725],"雙":[95,725],"雛":[95,725],"雜":[95,725],"雝":[95,725],"雞":[95,725],"離":[95,725],"難":[95,725],"霜":[95,725],"霞":[95,725],"霤":[95,725],"霧":[95,725],"霪":[95,725],"霰":[95,725],"露":[95,725],"霸":[95,725],"霹":[95,725],"霽":[95,725],"霾":[95,725],"靂":[95,725],"靄":[95,725],"靈":[95,725],"靡":[95,725],"靨":[95,725],"鞠":[95,725],"鞣":[95,725],"鞦":[95,725],"鞭":[95,725],"韁":[95,725],"韃":[95,725],"韆":[95,725],"韓":[95,725],"韙":[95,725],"韜":[95,725],"韞":[95,725],"韻":[95,725],"響":[95,725],"顆":[95,725],"題":[95,725],"額":[95,725],"顎":[95,725],"顏":[95,725],"顓":[95,725],"願":[95,725],"顙":[95,725],"顛":[95,725],"類":[95,725],"顢":[95,725],"顥":[95,725],"顧":[95,725],"顫":[95,725],"顯":[95,725],"顰":[95,725],"顱":[95,725],"顴":[95,725],"颶":[95,725],"颺":[95,725],"颼":[95,725],"飄":[95,725],"飆":[95,725],"餬":[95,725],"餮":[95,725],"餳":[95,725],"餵":[95,725],"餽":[95,725],"餾":[95,725],"餿":[95,725],"饃":[95,725],"饅":[95,725],"饈":[95,725],"饉":[95,725],"饋":[95,725],"饌":[95,725],"饑":[95,725],"饒":[95,725],"饕":[95,725],"饗":[95,725],"饘":[95,725],"饜":[95,725],"饞":[95,725],"馘":[95,725],"馥":[95,725],"馨":[95,725],"駸":[95,725],"駿":[95,725],"騁":[95,725],"騂":[95,725],"騃":[95,725],"騅":[95,725],"騎":[95,725],"騏":[95,725],"騖":[95,725],"騙":[95,725],"騫":[95,725],"騮":[95,725],"騰":[95,725],"騷":[95,725],"騾":[95,725],"驀":[95,725],"驁":[95,725],"驂":[95,725],"驃":[95,725],"驅":[95,725],"驊":[95,725],"驍":[95,725],"驕":[95,725],"驗":[95,725],"驚":[95,725],"驛":[95,725],"驟":[95,725],"驢":[95,725],"驤":[95,725],"驥":[95,725],"驪":[95,725],"骾":[95,725],"髀":[95,725],"髏":[95,725],"髒":[95,725],"髓":[95,725],"體":[95,725],"髖":[95,725],"鬃":[95,725],"鬆":[95,725],"鬈":[95,725],"鬍":[95,725],"鬚":[95,725],"鬟":[95,725],"鬢":[95,725],"鬣":[95,725],"鬩":[95,725],"鬮":[95,725],"鬱":[95,725],"魍":[95,725],"魎":[95,725],"魏":[95,725],"魑":[95,725],"魔":[95,725],"魘":[95,725],"鮪":[95,725],"鮫":[95,725],"鮭":[95,725],"鮮":[95,725],"鯀":[95,725],"鯁":[95,725],"鯇":[95,725],"鯈":[95,725],"鯉":[95,725],"鯊":[95,725],"鯖":[95,725],"鯗":[95,725],"鯛":[95,725],"鯝":[95,725],"鯤":[95,725],"鯧":[95,725],"鯨":[95,725],"鯰":[95,725],"鯽":[95,725],"鰈":[95,725],"鰍":[95,725],"鰓":[95,725],"鰣":[95,725],"鰥":[95,725],"鰭":[95,725],"鰱":[95,725],"鰲":[95,725],"鰹":[95,725],"鰻":[95,725],"鰾":[95,725],"鱈":[95,725],"鱉":[95,725],"鱒":[95,725],"鱔":[95,725],"鱖":[95,725],"鱗":[95,725],"鱷":[95,725],"鱸":[95,725],"鴻":[95,725],"鴿":[95,725],"鵑":[95,725],"鵜":[95,725],"鵝":[95,725],"鵠":[95,725],"鵡":[95,725],"鵪":[95,725],"鵬":[95,725],"鵰":[95,725],"鵲":[95,725],"鶉":[95,725],"鶘":[95,725],"鶩":[95,725],"鶯":[95,725],"鶴":[95,725],"鶺":[95,725],"鶻":[95,725],"鶼":[95,725],"鷂":[95,725],"鷓":[95,725],"鷗":[95,725],"鷥":[95,725],"鷦":[95,725],"鷯":[95,725],"鷲":[95,725],"鷸":[95,725],"鷹":[95,725],"鷺":[95,725],"鸚":[95,725],"鸛":[95,725],"鸝":[95,725],"鸞":[95,725],"鹹":[95,725],"鹼":[95,725],"鹽":[95,725],"麋":[95,725],"麒":[95,725],"麓":[95,725],"麗":[95,725],"麝":[95,725],"麟":[95,725],"麤":[140,725],"麰":[95,725],"麴":[95,725],"麵":[95,725],"黌":[95,725],"黏":[95,725],"黛":[95,725],"黜":[95,725],"黝":[95,725],"點":[95,725],"黟":[95,725],"黠":[95,725],"黥":[95,725],"黨":[95,725],"黯":[95,725],"黴":[95,725],"黷":[95,725],"黻":[95,725],"黼":[95,725],"黿":[95,725],"鼇":[95,725],"鼕":[95,725],"鼙":[95,725],"鼬":[95,725],"鼯":[95,725],"鼴":[95,725],"鼾":[95,725],"齋":[95,725],"齎":[95,725],"齏":[95,725],"齔":[95,725],"齕":[95,725],"齜":[95,725],"齟":[95,725],"齡":[95,725],"齣":[95,725],"齦":[95,725],"齧":[95,725],"齪":[95,725],"齬":[95,725],"齲":[95,725],"齷":[95,725],"龐":[95,725],"龔":[95,725],"龕":[95,725],"龠":[95,725],"龢":[95,725]}; // 寬高不是 50×725 的圖
+const imgSize=ch=>STROKE_SIZE[ch]||[50,725];
+const imgURL=ch=>STROKE_DIR+encodeURIComponent(ch)+'.png';
+const NUM_CHARS=new Set(Array.from("一七丈三上下不且世乎九也乾並中丰主久么亂了事二互五些今介仍他付代以件任份交京亮人什休似但佈位使低住佔何作你例便係保信修們倒候借值假偉做停健傘備傢先光克兒入內傳傷僅像價億儘優元充几出刀全兩八公六共其具典再冒冬冰冷准分切划初判別利刮到制刷刻前剛創劃劇力功加助努動務勝化北勢包卡印危區十千升午半南可台史右司各合受口古句另只叫同名后向否吧原去參又及友反叔取吵吹告呢周味命和咖咱品哈員哥哪哭唱商啊問啡啤喂善喊喜喝喫單嗎嘴器噹嚮四回因困土在地坐國園團城基堂堅報場塊境增壓多夜夠大天太夫失奇套壞夏外女奶她好如妹妻始姐姑姓婚姨娘媒媽子字存季孩學它安完定宜客宣室害家容富察實寫就居封將專對小少屋展層屬山工左巧差己已市布希師帶常帽幣幫干平年幸幹幾广床底店度座庭康建弄式廠廣形彩影弟張強彆往待很後得從復心必志忘忙快念忽怎怕思急性怪恐您情想意愛愿態慢慣慶應成我批找技或戲所手才打把抓拉拍拿持指按挺掃掉排掛採接推提換握搬擔據播擇支收改放故效救教敢散整數文斐料族日早明易斤新斷方於旁旅星春昨是時晚晨普景晴暖更書曾最月有朋服望板果朝期木末本朵李材村束杯東架某查校條根格桌梯椅楚概榦樂樓標檢樣樹橋機次歷死歌歡止正此步武歲段母每比毛民氣決水永汁求汽沒沙河油況法注泳洗洞活派流浪海消涼淨深清渴游湖湯準溫滿漂漢澡濟火為烈然煉煙照煩熊熟熱燒營父爸爺牆片牌牙牛物特爬爭狀狗玩理班現球瓶生產用由男界留畫環瓜當疼病痛的瘦發白百盃看眼盤目直相省眾睛睡知短矮石破瞭碗碰礎示社祇祝神票福禮秋科租程種稱積空穿突笑立站章第筆等答簡筷箇算管箱節篇籃米系精糕紀約紅紙級累紹經綠終組絕給網緊練總績羊繫繼續習美群義耳老考者而肉育背聊聞聯聰聲職胖能腦腳腿臉臟自至花色般船苦舊舒舞英苹茶草菜華菸萬落藉藍處號藝藥蘋蛋衣表衫被血行術衕街複褲裙補裝裡襯西要覆見規視親覺觀角解言訂計討訓記訪設許訴証評詞試話該誌認語誤說誰課調談請論講謝象證警議護讀變讓負責貴買費資賓賣賽走起超越趕趣足跑路跳踢身車迎近較輕輛迴迷追退送這通速造連道達遠週進遇遊運過辦農輸轉適遲部郵都鄉鄰那配酒里重金醣醫鉛銀錄錢錯錶鍛鍾鐘鐵長門開間閤闆關防阿附院除陰陽隊際隨險集雲零電需雖雙雜雞難雨雪青靜非靠面鞋音響頁順須預頓領頭顯風飛題顏願類食飯飲飽餃養餓館餵首香馬騎驗髒體高髮鬚鮮鳥麗麵麼黃黑點鼻齊齣龍龠"));
+
+const NUM_SOURCE='數字筆順資料：animCJK（Arphic Public License），已與教育部筆順提示逐字比對';
+const SOURCE='筆順提示圖來源：中華民國教育部《國字標準字體筆順學習網》stroke-order.learningweb.moe.edu.tw（CC BY-NC-ND）';
+
+const SAMPLE='秋天到了，天氣慢慢變涼。星期天早上，我和家人一起到山上走走。山上的樹變紅了，好像一朵朵小花。風一吹，紅紅的小花輕輕落下，大家都開心的笑了。';
+const DEF={text:SAMPLE,title:'筆順練習',mode:'num',dirNum:'h',dirOff:'v',reps:3,cols:'1',prows:'1',decomp:true,arrow:true,numbers:true,unique:true,header:true,grid:'tian',gcolor:'red',tcolor:'gray',size:'18',font:'kai'};
+let S=Object.assign({},DEF);
+try{ const sv=JSON.parse(localStorage.getItem('stroke-sheet-v2')||'null'); if(sv){ delete sv.text; S=Object.assign({},DEF,sv); } }catch(e){}
+// 只記住版面設定；文章每次打開都從範例文章開始
+const save=()=>{ try{ const o=Object.assign({},S); delete o.text; localStorage.setItem('stroke-sheet-v2',JSON.stringify(o)); }catch(e){} };
+
+const GCOL={red:{b:'#D9534A',g:'#EFA9A2'},green:{b:'#4E9A73',g:'#A9CDB8'},gray:{b:'#8A8F93',g:'#C9CDD0'}};
+const TCOL={gray:'#BCC1C5',red:'#F2A59D',blue:'#A3C4E4'};
+const FONTS={kai:'"LXGW WenKai TC","標楷體","DFKai-SB","BiauKai",serif',biaukai:'"標楷體","DFKai-SB","BiauKai","TW-Kai","LXGW WenKai TC",serif'};
+const OFFICE_FONT='標楷體';
+const HAN=/\p{Script=Han}/u;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function guideLines(type){
+  const L=[];
+  if(type==='tian'||type==='mi'){ L.push([50,0,50,100],[0,50,100,50]); }
+  if(type==='mi'){ L.push([0,0,100,100],[100,0,0,100]); }
+  if(type==='jiu'){ L.push([33.33,0,33.33,100],[66.67,0,66.67,100],[0,33.33,100,33.33],[0,66.67,100,66.67]); }
+  return L;
+}
+function guideSVG(){
+  const L=guideLines(S.grid); if(!L.length) return '';
+  const c=GCOL[S.gcolor].g;
+  return '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+L.map(l=>'<line x1="'+l[0]+'" y1="'+l[1]+'" x2="'+l[2]+'" y2="'+l[3]+'" stroke="'+c+'" stroke-width=".7" stroke-dasharray="3.2 2.6"/>').join('')+'</svg>';
+}
+
+/* ---------- 排版：直式，每個字一組 = 筆順提示 + 練習直行 ---------- */
+function charList(){
+  const out=[], seen=new Set();
+  for(const ch of Array.from(S.text||'')){
+    if(!HAN.test(ch)) continue;
+    if(S.unique&&seen.has(ch)) continue;
+    seen.add(ch); out.push(ch);
+  }
+  return out;
+}
+function dims(){
+  const s=parseFloat(S.size), W=186, H=238;
+  const rows=Math.floor((H+.3)/(s-.3)), colh=rows*(s-.3)+.3, ggap=Math.max(3,s*.2);
+  return {s,rows,colh,ggap,W};
+}
+function stripW(ch,d){ if(!STROKE_CHARS.has(ch)) return d.s*.9; const [w,h]=imgSize(ch); return w/h*(d.colh-.6)+.6; }
+function groupW(ch,d){ return stripW(ch,d)+(+S.cols)*(d.s-.3); }
+function cellsFor(ch,d){
+  const n=d.rows*(+S.cols), reps=Math.min(S.reps,n-1), a=[{k:'model',ch}];
+  for(let i=0;i<reps;i++) a.push({k:'trace',ch});
+  while(a.length<n) a.push({k:'blank'});
+  const cols=[]; for(let c=0;c<+S.cols;c++) cols.push(a.slice(c*d.rows,(c+1)*d.rows));
+  return cols;
+}
+function hdims(){
+  const s=parseFloat(S.size), W=186, H=238;
+  const rows=Math.max(3,Math.floor((110-.3)/(s-.3))), bh=rows*(s-.3)+.3;
+  return {s,W,H,rows,bh,colh:bh,gap:6,ggap:6,hz:true};
+}
+function hPer(ch,d){ return Math.floor((d.W-stripW(ch,d)-3+.3)/(d.s-.3)); }
+function hCells(ch,d){
+  const per=hPer(ch,d), n=per*d.rows, reps=Math.min(S.reps,n-1), a=[{k:'model',ch}];
+  for(let i=0;i<reps;i++) a.push({k:'trace',ch});
+  while(a.length<n) a.push({k:'blank'});
+  const rows=[]; for(let r=0;r<d.rows;r++) rows.push(a.slice(r*per,(r+1)*per));
+  return rows;
+}
+function groupHTMLh(ch,d,g){
+  const strip=STROKE_CHARS.has(ch)
+    ?'<div class="strip" style="width:'+stripW(ch,d).toFixed(2)+'mm"><img src="'+imgURL(ch)+'" alt="「'+esc(ch)+'」的筆順"></div>'
+    :'<div class="strip miss">查無筆順提示</div>';
+  return '<div class="grp hz" data-ch="'+esc(ch)+'">'+strip+'<div class="hgrid">'+hCells(ch,d).map(r=>'<div class="line">'+r.map(c=>cellHTML(c,g)).join('')+'</div>').join('')+'</div></div>';
+}
+function buildPages(){
+  if(S.dirOff==='h'){
+    const d=hdims(), pages=[], per=Math.max(1,Math.floor((d.H+d.gap)/(d.bh+d.gap))), list=charList();
+    for(let i=0;i<list.length;i+=per) pages.push(list.slice(i,i+per));
+    return {d,pages};
+  }
+  const d=dims(), pages=[]; let cur=[], used=0;
+  for(const ch of charList()){
+    const w=groupW(ch,d), need=cur.length?used+d.ggap+w:w;
+    if(cur.length&&need>d.W){ pages.push(cur); cur=[]; used=0; }
+    used=cur.length?used+d.ggap+w:w; cur.push(ch);
+  }
+  if(cur.length) pages.push(cur);
+  return {d,pages};
+}
+
+function cellHTML(c,g){ return '<div class="cell k-'+c.k+'">'+g+(c.ch?'<span class="ch">'+esc(c.ch)+'</span>':'')+'</div>'; }
+function groupHTML(ch,d,g){
+  const strip=STROKE_CHARS.has(ch)
+    ?'<div class="strip" style="width:'+stripW(ch,d).toFixed(2)+'mm"><img src="'+imgURL(ch)+'" alt="「'+esc(ch)+'」的筆順"></div>'
+    :'<div class="strip miss">查無筆順提示</div>';
+  return '<div class="grp" data-ch="'+esc(ch)+'">'+strip+cellsFor(ch,d).map(col=>'<div class="pcol">'+col.map(c=>cellHTML(c,g)).join('')+'</div>').join('')+'</div>';
+}
+function pageHTML(chars,n,total,d,exp){
+  const g=guideSVG();
+  const head='<div class="ph"><div class="pt">'+esc(S.title||'')+'</div>'+(S.header?'<div class="pf"><span>姓名<i></i></span><span>日期<i></i></span></div>':'')+'</div>';
+  const st='--s:'+d.s+'mm;--colh:'+d.colh.toFixed(2)+'mm;--ggap:'+d.ggap.toFixed(2)+'mm;--gb:'+GCOL[S.gcolor].b+';--tc:'+TCOL[S.tcolor]+';--pfont:'+FONTS[S.font].replace(/"/g,"'");
+  const body=d.hz?'<div class="pbody sh">'+chars.map(ch=>groupHTMLh(ch,d,g)).join('')+'</div>':'<div class="pbody sv">'+chars.map(ch=>groupHTML(ch,d,g)).join('')+'</div>';
+  const pg='<div class="page" style="'+st+'">'+head+'<div class="pm">先看'+(d.hz?'左':'右')+'邊的筆順，再寫黑色範字、描淡色字，最後在空格自己寫。</div>'+body+'<div class="pfoot"><span class="src">'+SOURCE+'</span><span>'+n+' / '+total+'</span></div></div>';
+  return exp?pg:'<div class="pw">'+pg+'</div>';
+}
+
+
+/* ---------- 數字筆順版 ---------- */
+const SD={};
+window.__SD=(ch,d)=>{ SD[ch]=d; };
+/* 自製筆順：網站上的 strokedata/custom.js，以及在「筆順製作」頁儲存在這台電腦的資料 */
+const CUSTOM=Object.assign({},window.CUSTOM_SD||{});
+try{ Object.assign(CUSTOM,JSON.parse(localStorage.getItem('stroke-custom')||'{}')); }catch(e){}
+Object.keys(CUSTOM).forEach(c=>{ SD[c]=CUSTOM[c]; });
+const sdLoading={};
+function loadData(chars){
+  return Promise.all(chars.filter(c=>NUM_CHARS.has(c)&&!SD[c]).map(c=>{
+    if(!sdLoading[c]) sdLoading[c]=new Promise(res=>{ const s=document.createElement('script'); s.src='strokedata/'+encodeURIComponent(c)+'.js'; s.onload=s.onerror=()=>res(); document.head.appendChild(s); });
+    return sdLoading[c];
+  }));
+}
+const {RED}=StrokeKit;
+function bigSVG(ch){ const d=SD[ch]; return d?StrokeKit.bigSVG(ch,d,{arrow:S.arrow,numbers:S.numbers}):''; }
+function numNote(){ return S.numbers?'照著紅色數字的順序'+(S.arrow?'、沿著箭頭方向':'')+'寫，再看分解圖一筆一筆練習。':(S.arrow?'沿著箭頭方向，':'')+'先想一想筆順，再看分解圖一筆一筆練習。'; }
+function stepSVG(ch,k){ return StrokeKit.stepSVG(SD[ch],k); }
+function numDims(){
+  const s=parseFloat(S.size), W=186, H=238, big=56, dc=13, gap=4;
+  const dper=Math.floor((W-big-gap+.25)/(dc-.25));
+  const per=Math.floor((W-.3)/(s-.3));
+  return {s,W,H,big,dc,dper,per};
+}
+function blockH(ch,d){
+  const n=SD[ch]?SD[ch].s.length:0;
+  const decH=(S.decomp&&n)?5.5+Math.ceil(n/d.dper)*(d.dc-.25)+.25:0;
+  const top=Math.max(d.big,decH);
+  return top+3+(+S.prows)*(d.s-.3)+.3;
+}
+function vGeo(ch,d){
+  const n=SD[ch]?SD[ch].s.length:0; let bw=48, g;
+  for(let it=0;it<3;it++){
+    const rem=d.H-bw-3-(n?5:0), rows=Math.floor((rem+.3)/(d.s-.3)), dper=Math.floor((rem+.25)/(d.dc-.25));
+    const dcols=(S.decomp&&n)?Math.ceil(n/dper):0, decW=dcols?dcols*(d.dc-.25)+.25+1.5:(n?0:7);
+    let pcols=+S.prows; while(decW+pcols*(d.s-.3)+.3<40) pcols++;
+    let gw=decW+pcols*(d.s-.3)+.3; const nbw=Math.min(56,Math.max(40,gw)); if(nbw>gw) gw=nbw;
+    g={n,bw:nbw,rows,dper,dcols,pcols,gw,decW}; if(nbw===bw) break; bw=nbw;
+  }
+  return g;
+}
+function buildNumPages(){
+  if(S.dirNum==='v'){
+    const d=Object.assign(numDims(),{dc:12,vert:true}), pages=[]; let cur=[], used=0;
+    for(const ch of charList()){
+      const w=vGeo(ch,d).gw, need=cur.length?used+5+w:w;
+      if(cur.length&&need>d.W){ pages.push(cur); cur=[]; used=0; }
+      used=cur.length?used+5+w:w; cur.push(ch);
+    }
+    if(cur.length) pages.push(cur);
+    return {d,pages};
+  }
+  const d=numDims(), pages=[]; let cur=[], used=0;
+  for(const ch of charList()){
+    const h=blockH(ch,d), need=cur.length?used+6+h:h;
+    if(cur.length&&need>d.H){ pages.push(cur); cur=[]; used=0; }
+    used=cur.length?used+6+h:h; cur.push(ch);
+  }
+  if(cur.length) pages.push(cur);
+  return {d,pages};
+}
+function numBlockHTML(ch,d,g){
+  const data=SD[ch], n=data?data.s.length:0;
+  const big='<div class="big">'+g+(data?bigSVG(ch):'<div class="fb ch">'+esc(ch)+'</div>')+'</div>';
+  let right='';
+  if(!data) right='<div class="dec"><div class="nomsg">這個字目前還沒有數字筆順，<br>可以到「筆順製作」頁自己排好筆順，<br>或切換到「教育部筆順圖」版。</div></div>';
+  else if(S.decomp){
+    let cells=''; for(let k=0;k<n;k++) cells+='<div class="dcell"><i>'+(k+1)+'</i>'+stepSVG(ch,k)+'</div>';
+    right='<div class="dec"><div class="dlabel"><span>筆畫分解</span><span>共 <b>'+n+'</b> 畫</span></div><div class="dgrid">'+cells+'</div></div>';
+  } else right='<div class="dec"><div class="dlabel"><span></span><span>共 <b>'+n+'</b> 畫</span></div></div>';
+  const tot=(+S.prows)*d.per, cells=[];
+  for(let i=0;i<tot;i++) cells.push(i<S.reps?{k:'trace',ch}:{k:'blank'});
+  let prac='';
+  for(let r=0;r<+S.prows;r++) prac+='<div class="line">'+cells.slice(r*d.per,(r+1)*d.per).map(c=>cellHTML(c,g)).join('')+'</div>';
+  return '<div class="nblk" data-ch="'+esc(ch)+'"><div class="ntop">'+big+right+'</div><div class="prac">'+prac+'</div></div>';
+}
+function vCells(ch,G){
+  const tot=G.pcols*G.rows, a=[];
+  for(let i=0;i<tot;i++) a.push(i<S.reps?{k:'trace',ch}:{k:'blank'});
+  const cols=[]; for(let c=0;c<G.pcols;c++) cols.push(a.slice(c*G.rows,(c+1)*G.rows));
+  return cols;
+}
+function numGroupHTMLv(ch,d,g){
+  const G=vGeo(ch,d), data=SD[ch];
+  const big='<div class="big" style="width:'+G.bw+'mm;height:'+G.bw+'mm">'+g+(data?bigSVG(ch):'<div class="fb ch" style="font-size:'+(G.bw*.8).toFixed(1)+'mm">'+esc(ch)+'</div>')+'</div>';
+  const tot=data?'<div class="vtot">共 <b>'+G.n+'</b> 畫</div>':'';
+  let dec='';
+  if(!data) dec='<div class="vnote">還沒有數字筆順，可到「筆順製作」頁製作</div>';
+  else if(G.dcols){
+    dec='<div class="dvcols">';
+    for(let c=0;c<G.dcols;c++){ dec+='<div class="dcol">'; for(let k=c*G.dper;k<Math.min(G.n,(c+1)*G.dper);k++) dec+='<div class="dcell"><i>'+(k+1)+'</i>'+stepSVG(ch,k)+'</div>'; dec+='</div>'; }
+    dec+='</div>';
+  }
+  const prac=vCells(ch,G).map(col=>'<div class="pcol">'+col.map(c=>cellHTML(c,g)).join('')+'</div>').join('');
+  return '<div class="vg" data-ch="'+esc(ch)+'" style="width:'+G.gw.toFixed(2)+'mm">'+big+tot+'<div class="vcols">'+dec+prac+'</div></div>';
+}
+function numPageHTML(chars,n,total,d,exp){
+  const g=guideSVG();
+  const head='<div class="ph"><div class="pt">'+esc(S.title||'')+'</div>'+(S.header?'<div class="pf"><span>姓名<i></i></span><span>日期<i></i></span></div>':'')+'</div>';
+  const st='--s:'+d.s+'mm;--big:'+d.big+'mm;--dc:'+d.dc+'mm;--gb:'+GCOL[S.gcolor].b+';--tc:'+TCOL[S.tcolor]+';--pfont:'+FONTS[S.font].replace(/"/g,"'");
+  const pg='<div class="page" style="'+st+'">'+head+'<div class="pm">'+numNote()+'</div>'+(d.vert?'<div class="pbody nvv">'+chars.map(ch=>numGroupHTMLv(ch,d,g)).join('')+'</div>':'<div class="pbody nv">'+chars.map(ch=>numBlockHTML(ch,d,g)).join('')+'</div>')+'<div class="pfoot"><span class="src">'+NUM_SOURCE+'</span><span>'+n+' / '+total+'</span></div></div>';
+  return exp?pg:'<div class="pw">'+pg+'</div>';
+}
+
+let renderSeq=0;
+async function render(){
+  syncVis();
+  if(S.mode==='num'){
+    const my=++renderSeq; await loadData(charList()); if(my!==renderSeq) return;
+    const {d,pages}=buildNumPages();
+    $('#sizeHint').textContent='每行 '+d.per+' 格';
+    pagesEl.innerHTML=pages.map((p,i)=>numPageHTML(p,i+1,pages.length,d)).join('');
+    $('#pagecount').textContent=pages.length?'共 '+pages.length+' 頁 A4':'';
+    updateStatus(pages.length); fit(); return;
+  }
+  renderSeq++;
+  const {d,pages}=buildPages();
+  $('#sizeHint').textContent='每直行 '+d.rows+' 格';
+  pagesEl.innerHTML=pages.map((p,i)=>pageHTML(p,i+1,pages.length,d)).join('');
+  $('#pagecount').textContent=pages.length?'共 '+pages.length+' 頁 A4':'';
+  updateStatus(pages.length);
+  fit();
+}
+function updateStatus(n){
+  const st=$('#status'), list=charList();
+  if(!list.length){ st.textContent='貼上文章後，右邊會出現筆順寫字本。'; return; }
+  const miss=S.mode==='num'?list.filter(c=>!SD[c]):list.filter(c=>!STROKE_CHARS.has(c));
+  st.innerHTML='要練習的字有 '+list.length+' 個，排成 '+n+' 頁。'+(miss.length?'<div class="miss-list">'+(S.mode==='num'?'以下 '+miss.length+' 個字目前沒有數字筆順，可到<a href="maker.html?ch='+encodeURIComponent(miss[0])+'">筆順製作</a>頁自己製作：':'以下 '+miss.length+' 個字不在教育部筆順提示中，只會有練習格：')+esc(miss.join('、'))+'</div>':'');
+}
+
+let mm=null;
+function fit(){
+  if(!mm){ const t=document.createElement('div'); t.style.cssText='position:absolute;visibility:hidden;width:210mm;height:297mm'; document.body.appendChild(t); mm={w:t.offsetWidth,h:t.offsetHeight}; t.remove(); }
+  const avail=pagesEl.clientWidth||pagesEl.parentElement.clientWidth;
+  const sc=Math.min(1,(avail-4)/mm.w);
+  pagesEl.querySelectorAll('.pw').forEach(pw=>{ pw.style.width=(mm.w*sc)+'px'; pw.style.height=(mm.h*sc)+'px'; pw.firstChild.style.transform='scale('+sc+')'; });
+}
+window.addEventListener('resize',fit);
+
+/* ---------- 控制項 ---------- */
+function bindSeg(id,key){
+  const el=$(id);
+  const sync=()=>el.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===String(S[key]))));
+  el.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; S[key]=b.dataset.v; sync(); save(); render(); });
+  sync();
+}
+function bindCheck(id,key){ const el=$(id); el.checked=!!S[key]; el.addEventListener('change',()=>{ S[key]=el.checked; save(); render(); }); }
+function syncVis(){
+  $('#fNum').style.display=S.mode==='num'?'':'none';
+  $('#fCols').style.display=(S.mode==='num'||S.dirOff==='h')?'none':'';
+  const dv=S.mode==='num'?S.dirNum:S.dirOff;
+  document.querySelectorAll('#segDir button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===dv)));
+}
+$('#segDir').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; if(S.mode==='num') S.dirNum=b.dataset.v; else S.dirOff=b.dataset.v; save(); render(); });
+[['#segMode','mode'],['#segProws','prows'],['#segCols','cols'],['#segGrid','grid'],['#segGcolor','gcolor'],['#segTcolor','tcolor'],['#segSize','size'],['#segFont','font']].forEach(a=>bindSeg(...a));
+[['#cUnique','unique'],['#cHeader','header'],['#cDecomp','decomp'],['#cArrow','arrow'],['#cNumbers','numbers']].forEach(a=>bindCheck(...a));
+const repOut=$('#repOut'); repOut.textContent=S.reps;
+const setReps=v=>{ S.reps=Math.max(0,Math.min(12,v)); repOut.textContent=S.reps; save(); render(); };
+$('#repMinus').onclick=()=>setReps(S.reps-1); $('#repPlus').onclick=()=>setReps(S.reps+1);
+
+const txt=$('#txt'), title=$('#title');
+txt.value=S.text; title.value=S.title;
+let tmr;
+txt.addEventListener('input',()=>{ clearTimeout(tmr); tmr=setTimeout(()=>{ S.text=txt.value; save(); render(); },300); });
+title.addEventListener('input',()=>{ S.title=title.value; save(); render(); });
+$('#btnSample').onclick=()=>{ txt.value=SAMPLE; S.text=SAMPLE; save(); render(); };
+$('#btnClear').onclick=()=>{ txt.value=''; S.text=''; save(); render(); txt.focus(); };
+$('#btnPrint').onclick=()=>{ if(!charList().length){ txt.focus(); return; } window.print(); };
+
+/* ---------- 下載 ---------- */
+const LIBS={
+  docx:['https://cdn.jsdelivr.net/npm/docx@9.7.2/dist/index.iife.js',()=>window.docx],
+  pptx:['https://cdn.jsdelivr.net/npm/pptxgenjs@4.0.1/dist/pptxgen.bundle.js',()=>window.PptxGenJS],
+  jspdf:['https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js',()=>window.jspdf],
+  h2c:['https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',()=>window.html2canvas]
+};
+const loading={};
+function lib(name){
+  const [url,get]=LIBS[name];
+  if(get()) return Promise.resolve(get());
+  if(!loading[name]) loading[name]=new Promise((res,rej)=>{
+    const s=document.createElement('script'); s.src=url;
+    s.onload=()=>get()?res(get()):rej(new Error('lib'));
+    s.onerror=()=>{ delete loading[name]; rej(new Error('lib')); };
+    document.head.appendChild(s);
+  });
+  return loading[name];
+}
+function saveFile(name,blob){
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+const toast=$('#toast'); let toastT;
+function say(msg,keep){ toast.textContent=msg; toast.classList.add('show'); clearTimeout(toastT); if(!keep) toastT=setTimeout(()=>toast.classList.remove('show'),3600); }
+const fileBase=()=>((S.title||'筆順練習').replace(/[\\/:*?"<>|]/g,'').trim()||'筆順練習');
+const hex=c=>c.replace('#','').toUpperCase();
+function exportPages(){
+  let box=$('#exportBox'); if(!box){ box=document.createElement('div'); box.id='exportBox'; document.body.appendChild(box); }
+  if(S.mode==='num'){ const {d,pages}=buildNumPages(); box.innerHTML=pages.map((p,i)=>numPageHTML(p,i+1,pages.length,d,true)).join(''); }
+  else { const {d,pages}=buildPages(); box.innerHTML=pages.map((p,i)=>pageHTML(p,i+1,pages.length,d,true)).join(''); }
+  return [...box.querySelectorAll('.page')];
+}
+const clearExport=()=>{ const b=$('#exportBox'); if(b) b.innerHTML=''; };
+async function ready(root){
+  if(document.fonts&&document.fonts.ready){ try{ await document.fonts.ready; }catch(e){} }
+  await Promise.all([...root.querySelectorAll('img')].map(im=>im.decode?im.decode().catch(()=>{}):null));
+}
+function svgPNG(svgStr,w,h){
+  return new Promise((res,rej)=>{
+    const img=new Image();
+    img.onload=()=>{ const c=document.createElement('canvas'); c.width=w; c.height=h||w; c.getContext('2d').drawImage(img,0,0,c.width,c.height); c.toBlob(b=>b.arrayBuffer().then(a=>res(new Uint8Array(a))),'image/png'); };
+    img.onerror=()=>rej(new Error('svg'));
+    img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svgStr);
+  });
+}
+const bytesCache={};
+async function pngBytes(ch){
+  if(!bytesCache[ch]){ const r=await fetch(imgURL(ch)); if(!r.ok) throw new Error('img'); bytesCache[ch]=new Uint8Array(await r.arrayBuffer()); }
+  return bytesCache[ch];
+}
+function dataURL(u8){ let s=''; for(let i=0;i<u8.length;i+=8192) s+=String.fromCharCode.apply(null,u8.subarray(i,i+8192)); return 'data:image/png;base64,'+btoa(s); }
+
+async function toPDF(){
+  const [h2c,jsp]=await Promise.all([lib('h2c'),lib('jspdf')]);
+  const pages=exportPages(); await ready($('#exportBox'));
+  const pdf=new jsp.jsPDF({unit:'mm',format:'a4',orientation:'portrait',compress:true});
+  for(let i=0;i<pages.length;i++){
+    say('正在產生 PDF…第 '+(i+1)+' / '+pages.length+' 頁',true);
+    const cv=await h2c(pages[i],{scale:2.6,backgroundColor:'#ffffff',logging:false,useCORS:true});
+    if(i) pdf.addPage();
+    pdf.addImage(cv.toDataURL('image/jpeg',0.92),'JPEG',0,0,210,297);
+  }
+  clearExport();
+  return pdf.output('blob');
+}
+
+async function toPPTX(){
+  const P=await lib('pptx');
+  const pages=exportPages(); await ready($('#exportBox'));
+  const pptx=new P();
+  pptx.defineLayout({name:'A4P',width:8.27,height:11.69}); pptx.layout='A4P';
+  pptx.title=S.title||'筆順練習';
+  const IN=1/25.4, GB=hex(GCOL[S.gcolor].b), GG=hex(GCOL[S.gcolor].g), gl=guideLines(S.grid);
+  for(let pi=0;pi<pages.length;pi++){
+    const pg=pages[pi];
+    say('正在產生 PPT…第 '+(pi+1)+' / '+pages.length+' 頁',true);
+    const slide=pptx.addSlide(); slide.background={color:'FFFFFF'};
+    const pr=pg.getBoundingClientRect(), k=210/pr.width;
+    const R=el=>{ const r=el.getBoundingClientRect(); return {x:(r.left-pr.left)*k,y:(r.top-pr.top)*k,w:r.width*k,h:r.height*k}; };
+    const pt=el=>parseFloat(getComputedStyle(el).fontSize)*k*72/25.4;
+    const col=el=>{ const m=getComputedStyle(el).color.match(/\d+/g); return m.slice(0,3).map(v=>(+v).toString(16).padStart(2,'0')).join('').toUpperCase(); };
+    const text=(el,str,o={})=>{
+      const b=R(el), padW=o.padW??b.w*.3, padH=b.h*.15, x0=o.align==='left'?b.x:b.x-padW/2;
+      slide.addText(str,{x:x0*IN,y:(b.y-padH/2)*IN,w:(b.w+padW)*IN,h:(b.h+padH)*IN,fontFace:OFFICE_FONT,fontSize:+pt(el).toFixed(1),color:col(el),bold:!!o.bold,align:o.align||'center',valign:'middle',margin:0,wrap:false,fit:'none'});
+    };
+    const line=(x,y,w,h,color,dash,wid)=>{ const flipH=w<0; slide.addShape(pptx.ShapeType.line,{x:(flipH?x+w:x)*IN,y:y*IN,w:Math.abs(w)*IN,h:h*IN,flipH,line:{color,width:wid||0.5,dashType:dash?'dash':'solid'}}); };
+    const box=(b,c,w)=>slide.addShape(pptx.ShapeType.rect,{x:b.x*IN,y:b.y*IN,w:b.w*IN,h:b.h*IN,fill:{color:'FFFFFF',transparency:100},line:{color:c,width:w||0.85}});
+    const ttl=pg.querySelector('.pt'); if(ttl&&ttl.textContent) text(ttl,ttl.textContent,{bold:true,align:'left',padW:40});
+    const ph=pg.querySelector('.ph'); if(ph){ const b=R(ph); line(b.x,b.y+b.h,b.w,0,GB,false,1.5); }
+    pg.querySelectorAll('.pf span').forEach(sp=>{
+      const i=sp.querySelector('i'), b=R(sp), ib=R(i);
+      slide.addText(sp.firstChild.textContent,{x:b.x*IN,y:b.y*IN,w:(ib.x-b.x)*IN,h:b.h*IN,fontFace:OFFICE_FONT,fontSize:+pt(sp).toFixed(1),color:'222222',align:'left',valign:'bottom',margin:0,wrap:false});
+      line(ib.x,ib.y+ib.h,ib.w,0,'333333',false,0.75);
+    });
+    const pm=pg.querySelector('.pm'); if(pm) text(pm,pm.textContent,{align:'left',padW:60});
+    pg.querySelectorAll('.pfoot span').forEach(sp=>{ const b=R(sp); slide.addText(sp.textContent,{x:b.x*IN,y:b.y*IN,w:(b.w+2)*IN,h:b.h*IN,fontFace:'Microsoft JhengHei',fontSize:+(pt(sp)*(sp.classList.contains('src')?.9:1)).toFixed(1),color:'8A8F93',align:sp.classList.contains('src')?'left':'right',valign:'middle',margin:0,wrap:false}); });
+    if(S.mode==='num'){
+      for(const el of pg.querySelectorAll('.dlabel span,.nomsg')) if(el.textContent.trim()) text(el,el.textContent,{align:el.matches('.dlabel span:last-child')?'right':'left',padW:el.classList.contains('nomsg')?80:10});
+      for(const el of pg.querySelectorAll('.vtot')) text(el,el.textContent,{padW:10});
+      for(const el of pg.querySelectorAll('.vnote')){ const b=R(el); slide.addText(el.textContent,{x:b.x*IN,y:b.y*IN,w:(b.w+1)*IN,h:b.h*IN,fontFace:OFFICE_FONT,fontSize:+pt(el).toFixed(1),color:'8A8F93',vert:'eaVert',margin:0,valign:'top',align:'center'}); }
+      for(const bg of pg.querySelectorAll('.big,.dcell')){
+        const b=R(bg); const isBig=bg.classList.contains('big');
+        if(isBig) gl.forEach(l=>line(b.x+b.w*l[0]/100,b.y+b.h*l[1]/100,b.w*(l[2]-l[0])/100,b.h*(l[3]-l[1])/100,GG,true,0.5));
+        const sv=bg.querySelector('svg.gl');
+        if(sv){ const u8=await svgPNG(sv.outerHTML,isBig?700:260); slide.addImage({data:dataURL(u8),x:b.x*IN,y:b.y*IN,w:b.w*IN,h:b.h*IN}); }
+        const fb=bg.querySelector('.fb'); if(fb) text(fb,fb.textContent);
+        box(b,GB,isBig?1:0.6);
+        const no=bg.querySelector('i'); if(no) text(no,no.textContent,{align:'left',padW:2});
+      }
+      pg.querySelectorAll('.cell').forEach(cell=>{
+        const b=R(cell);
+        gl.forEach(l=>line(b.x+b.w*l[0]/100,b.y+b.h*l[1]/100,b.w*(l[2]-l[0])/100,b.h*(l[3]-l[1])/100,GG,true,0.5));
+        box(b,GB);
+        const ch=cell.querySelector('.ch'); if(ch) text(ch,ch.textContent);
+      });
+      continue;
+    }
+    for(const g of pg.querySelectorAll('.grp')){
+      const st=g.querySelector('.strip'), sb=R(st);
+      const im=st.querySelector('img');
+      if(im){ const u8=await pngBytes(g.dataset.ch), ib=R(im); slide.addImage({data:dataURL(u8),x:ib.x*IN,y:ib.y*IN,w:ib.w*IN,h:ib.h*IN,altText:im.alt}); }
+      else text(st,'查無筆順提示');
+      box(sb,GB);
+      g.querySelectorAll('.cell').forEach(cell=>{
+        const b=R(cell);
+        gl.forEach(l=>line(b.x+b.w*l[0]/100,b.y+b.h*l[1]/100,b.w*(l[2]-l[0])/100,b.h*(l[3]-l[1])/100,GG,true,0.5));
+        box(b,GB);
+        const ch=cell.querySelector('.ch'); if(ch) text(ch,ch.textContent);
+      });
+    }
+  }
+  clearExport();
+  return pptx.write({outputType:'blob'});
+}
+
+function guidePNG(px){
+  const L=guideLines(S.grid); if(!L.length) return Promise.resolve(null);
+  const c=document.createElement('canvas'); c.width=c.height=px;
+  const x=c.getContext('2d'); x.strokeStyle=GCOL[S.gcolor].g; x.lineWidth=Math.max(1,px*.007); x.setLineDash([px*.032,px*.026]);
+  L.forEach(l=>{ x.beginPath(); x.moveTo(l[0]*px/100,l[1]*px/100); x.lineTo(l[2]*px/100,l[3]*px/100); x.stroke(); });
+  return new Promise(r=>c.toBlob(b=>b.arrayBuffer().then(a=>r(new Uint8Array(a))),'image/png'));
+}
+
+async function docxKit(){
+  const D=await lib('docx');
+  const TW=v=>Math.round(v*56.6929), HP=v=>Math.max(2,Math.round(v*2.8346*2)), PX=mm=>Math.round(mm/25.4*96);
+  const F={ascii:OFFICE_FONT,eastAsia:OFFICE_FONT,hAnsi:OFFICE_FONT,cs:OFFICE_FONT};
+  const GB=hex(GCOL[S.gcolor].b), TC=hex(TCOL[S.tcolor]);
+  const guide=await guidePNG(600);
+  const on={style:D.BorderStyle.SINGLE,size:6,color:GB}, off={style:D.BorderStyle.NONE,size:0,color:'FFFFFF'};
+  const all={top:on,bottom:on,left:on,right:on}, none={top:off,bottom:off,left:off,right:off};
+  const P=(runs,h,align)=>new D.Paragraph({alignment:align||D.AlignmentType.CENTER,spacing:{before:0,after:0,line:TW(h),lineRule:D.LineRuleType.EXACT},children:runs});
+  const gRun=sz=>guide?new D.ImageRun({type:'png',data:guide,transformation:{width:PX(sz),height:PX(sz)},floating:{horizontalPosition:{relative:D.HorizontalPositionRelativeFrom.COLUMN,offset:0},verticalPosition:{relative:D.VerticalPositionRelativeFrom.PARAGRAPH,offset:0},behindDocument:true,allowOverlap:true,layoutInCell:true,lockAnchor:true,wrap:{type:D.TextWrappingType.NONE}}}):null;
+  const cellOf=(c,s)=>{
+    const rs=[]; const g=c?gRun(s):null; if(g) rs.push(g);
+    if(c&&c.ch) rs.push(new D.TextRun({text:c.ch,font:F,size:HP(s*.84),color:c.k==='model'?'1A1A1A':TC}));
+    if(!rs.length) rs.push(new D.TextRun({text:'',size:2}));
+    return new D.TableCell({width:{size:TW(s),type:D.WidthType.DXA},verticalAlign:D.VerticalAlign.TOP,margins:{top:0,bottom:0,left:0,right:0},borders:c?all:none,children:[P(rs,s*.97)]});
+  };
+  const empty=w=>new D.TableCell({width:{size:TW(w),type:D.WidthType.DXA},margins:{top:0,bottom:0,left:0,right:0},borders:none,children:[P([new D.TextRun({text:'',size:2})],.5)]});
+  const header=(pi,note)=>{
+    const runs=[new D.TextRun({text:S.title||'',bold:true,font:F,size:HP(8)})];
+    if(S.header) runs.push(new D.TextRun({text:'\t姓名＿＿＿＿＿＿＿　日期＿＿＿＿＿＿＿',font:F,size:HP(4.2)}));
+    return [new D.Paragraph({pageBreakBefore:pi>0,tabStops:[{type:D.TabStopType.RIGHT,position:TW(186)}],border:{bottom:{style:D.BorderStyle.SINGLE,size:8,color:GB,space:4}},spacing:{after:TW(1.5)},children:runs}),
+      new D.Paragraph({spacing:{after:TW(2.5)},children:[new D.TextRun({text:note,font:F,size:HP(4),color:GB})]})];
+  };
+  const foot=t=>new D.Paragraph({spacing:{before:TW(2)},children:[new D.TextRun({text:t,size:HP(3),color:'8A8F93',font:{eastAsia:'微軟正黑體',ascii:'Arial',hAnsi:'Arial'}})]});
+  const pack=children=>D.Packer.toBlob(new D.Document({creator:'筆順寫字本產生器',title:S.title||'筆順練習',styles:{default:{document:{run:{font:F}}}},
+    sections:[{properties:{page:{size:{width:TW(210),height:TW(297)},margin:{top:TW(11),bottom:TW(8),left:TW(12),right:TW(12),header:0,footer:0}}},children}]}));
+  return {D,TW,HP,PX,F,GB,TC,all,none,P,cellOf,empty,header,foot,pack};
+}
+/* 教育部筆順圖・橫式 */
+async function toDOCXoffH(){
+  const K=await docxKit(), D=K.D, {d,pages}=buildPages(), children=[];
+  for(let pi=0;pi<pages.length;pi++){
+    say('正在產生 Word…第 '+(pi+1)+' / '+pages.length+' 頁',true);
+    children.push(...K.header(pi,'先看左邊的筆順，再寫黑色範字、描淡色字，最後在空格自己寫。'));
+    for(const ch of pages[pi]){
+      const sw=stripW(ch,d), per=hPer(ch,d), rowsC=hCells(ch,d), rows=[];
+      for(let r=0;r<d.rows;r++){
+        const cells=[];
+        if(r===0){
+          const kids=STROKE_CHARS.has(ch)
+            ?[new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.ImageRun({type:'png',data:await pngBytes(ch),transformation:{width:K.PX(sw-.6),height:K.PX(d.bh-.6)},altText:{name:ch,description:'「'+ch+'」的筆順',title:ch}})]})]
+            :[K.P([new D.TextRun({text:'查無筆順提示',font:K.F,size:K.HP(3.4),color:'9AA0A6'})],5)];
+          cells.push(new D.TableCell({rowSpan:d.rows,width:{size:K.TW(sw),type:D.WidthType.DXA},margins:{top:0,bottom:0,left:0,right:0},borders:K.all,children:kids}));
+          cells.push(new D.TableCell({rowSpan:d.rows,width:{size:K.TW(3),type:D.WidthType.DXA},borders:K.none,children:[new D.Paragraph('')]}));
+        }
+        rowsC[r].forEach(c=>cells.push(K.cellOf(c,d.s)));
+        rows.push(new D.TableRow({height:{value:K.TW(d.s-.3),rule:D.HeightRule.EXACT},cantSplit:true,children:cells}));
+      }
+      children.push(new D.Table({rows,columnWidths:[K.TW(sw),K.TW(3)].concat(Array(per).fill(K.TW(d.s))),layout:D.TableLayoutType.FIXED}));
+      children.push(new D.Paragraph({spacing:{before:0,after:0,line:K.TW(6),lineRule:D.LineRuleType.EXACT},children:[]}));
+    }
+    children.push(K.foot(SOURCE));
+  }
+  return K.pack(children);
+}
+/* 數字筆順・直式 */
+async function toDOCXnumV(){
+  const K=await docxKit(), D=K.D, {d,pages}=buildNumPages(), children=[];
+  const G1024=guideLines(S.grid).map(l=>'<line x1="'+l[0]*10.24+'" y1="'+l[1]*10.24+'" x2="'+l[2]*10.24+'" y2="'+l[3]*10.24+'" stroke="'+GCOL[S.gcolor].g+'" stroke-width="5" stroke-dasharray="30 24"/>').join('');
+  async function decompV(ch,G){
+    const cp=150, W=G.dcols*cp+2, H=Math.min(G.n,G.dper)*cp+2;
+    const c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,W,H);
+    for(let k=0;k<G.n;k++){
+      const col=Math.floor(k/G.dper), px=W-1-(col+1)*cp, py=(k%G.dper)*cp+1;
+      const im=await createImageBitmap(new Blob([await svgPNG(stepSVG(ch,k),cp,cp)],{type:'image/png'}));
+      x.drawImage(im,px,py,cp,cp); x.strokeStyle=GCOL[S.gcolor].b; x.lineWidth=2; x.strokeRect(px,py,cp,cp);
+      x.fillStyle='#8a8f93'; x.font='26px Arial'; x.fillText(String(k+1),px+6,py+28);
+    }
+    const u8=await new Promise(r=>c.toBlob(b=>b.arrayBuffer().then(a=>r(new Uint8Array(a))),'image/png'));
+    return {u8,w:W/cp*(d.dc-.25),h:H/cp*(d.dc-.25)};
+  }
+  for(let pi=0;pi<pages.length;pi++){
+    say('正在產生 Word…第 '+(pi+1)+' / '+pages.length+' 頁',true);
+    children.push(...K.header(pi,numNote()));
+    const groups=[...pages[pi]].reverse().map(ch=>({ch,G:vGeo(ch,d)}));
+    const cols=[], row0=[], R=Math.max(...groups.map(o=>o.G.rows)), body=Array.from({length:R},()=>[]);
+    for(let gi=0;gi<groups.length;gi++){
+      const {ch,G}=groups[gi], data=SD[ch];
+      if(gi){ cols.push(K.TW(5)); row0.push(K.empty(5)); body.forEach(r=>r.push(K.empty(5))); }
+      const pw=G.pcols*(d.s-.3)+.3, dw=G.gw-pw;
+      const span=G.pcols+(dw>.5?1:0);
+      for(let c=0;c<G.pcols;c++) cols.push(K.TW(d.s-.3+(c===0?.3:0)));
+      if(dw>.5) cols.push(K.TW(dw));
+      // 第一列：大字
+      let kids;
+      if(data){
+        const inner=bigSVG(ch).replace(/^<svg[^>]*>/,'').replace(/<\/svg>$/,'');
+        const u8=await svgPNG('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="#fff"/>'+G1024+inner+'<rect x="4" y="4" width="1016" height="1016" fill="none" stroke="'+GCOL[S.gcolor].b+'" stroke-width="8"/></svg>',640);
+        kids=[new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.ImageRun({type:'png',data:u8,transformation:{width:K.PX(G.bw-1),height:K.PX(G.bw-1)},altText:{name:ch,description:'「'+ch+'」的筆順數字圖',title:ch}})]}),
+              new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({text:'共 '+G.n+' 畫',font:K.F,size:K.HP(3.2),color:'555555'})]})];
+      } else kids=[K.P([new D.TextRun({text:ch,font:K.F,size:K.HP(G.bw*.8)})],G.bw-1)];
+      row0.push(new D.TableCell({columnSpan:span,width:{size:K.TW(G.gw),type:D.WidthType.DXA},margins:{top:0,bottom:K.TW(2),left:0,right:0},borders:K.none,children:kids}));
+      // 其他列：練習格（左到右＝最後一行到第一行）＋ 右邊的分解圖
+      const pc=vCells(ch,G).reverse();
+      for(let r=0;r<R;r++){
+        for(let c=0;c<G.pcols;c++) body[r].push(r<G.rows?K.cellOf(pc[c][r],d.s):K.empty(d.s));
+        if(dw>.5&&r===0){
+          let dk;
+          if(data&&G.dcols){ const dp=await decompV(ch,G); dk=[new D.Paragraph({alignment:D.AlignmentType.RIGHT,children:[new D.ImageRun({type:'png',data:dp.u8,transformation:{width:K.PX(dp.w),height:K.PX(dp.h)},altText:{name:ch,description:'「'+ch+'」筆畫分解',title:ch}})]})]; }
+          else dk=[new D.Paragraph({children:[new D.TextRun({text:'還沒有數字筆順',font:K.F,size:K.HP(3.2),color:'8A8F93'})]})];
+          body[r].push(new D.TableCell({rowSpan:R,width:{size:K.TW(dw),type:D.WidthType.DXA},verticalAlign:D.VerticalAlign.TOP,margins:{top:0,bottom:0,left:K.TW(1.5),right:0},borders:K.none,children:dk}));
+        }
+      }
+    }
+    const rows=[new D.TableRow({children:row0})].concat(body.map(r=>new D.TableRow({height:{value:K.TW(d.s-.3),rule:D.HeightRule.EXACT},cantSplit:true,children:r})));
+    children.push(new D.Table({rows,columnWidths:cols,layout:D.TableLayoutType.FIXED,alignment:D.AlignmentType.RIGHT}));
+    children.push(K.foot(NUM_SOURCE));
+  }
+  return K.pack(children);
+}
+async function toDOCXnum(){
+  if(S.dirNum==='v') return toDOCXnumV();
+  const D=await lib('docx');
+  const {Document,Packer,Paragraph,TextRun,ImageRun,Table,TableRow,TableCell,WidthType,BorderStyle,VerticalAlign,HeightRule,AlignmentType,TableLayoutType,LineRuleType,TabStopType,HorizontalPositionRelativeFrom,VerticalPositionRelativeFrom,TextWrappingType}=D;
+  const {d,pages}=buildNumPages();
+  const TW=v=>Math.round(v*56.6929), HP=v=>Math.max(2,Math.round(v*2.8346*2)), PX=mm=>Math.round(mm/25.4*96);
+  const s=d.s, F={ascii:OFFICE_FONT,eastAsia:OFFICE_FONT,hAnsi:OFFICE_FONT,cs:OFFICE_FONT};
+  const GB=hex(GCOL[S.gcolor].b), TC=hex(TCOL[S.tcolor]);
+  const guide=await guidePNG(600);
+  const on={style:BorderStyle.SINGLE,size:6,color:GB}, off={style:BorderStyle.NONE,size:0,color:'FFFFFF'};
+  const none={top:off,bottom:off,left:off,right:off}, all={top:on,bottom:on,left:on,right:on};
+  const P=(runs,h,align)=>new Paragraph({alignment:align||AlignmentType.CENTER,spacing:{before:0,after:0,line:TW(h),lineRule:LineRuleType.EXACT},children:runs});
+  const gRun=sz=>guide?new ImageRun({type:'png',data:guide,transformation:{width:PX(sz),height:PX(sz)},floating:{horizontalPosition:{relative:HorizontalPositionRelativeFrom.COLUMN,offset:0},verticalPosition:{relative:VerticalPositionRelativeFrom.PARAGRAPH,offset:0},behindDocument:true,allowOverlap:true,layoutInCell:true,lockAnchor:true,wrap:{type:TextWrappingType.NONE}}}):null;
+  const G1024=guideLines(S.grid).map(l=>'<line x1="'+l[0]*10.24+'" y1="'+l[1]*10.24+'" x2="'+l[2]*10.24+'" y2="'+l[3]*10.24+'" stroke="'+GCOL[S.gcolor].g+'" stroke-width="5" stroke-dasharray="30 24"/>').join('');
+  async function decompPNG(ch){
+    const n=SD[ch].s.length, per=d.dper, rows=Math.ceil(n/per), cp=150;
+    const c=document.createElement('canvas'); c.width=per*cp+2; c.height=rows*cp+2; const x=c.getContext('2d');
+    x.fillStyle='#fff'; x.fillRect(0,0,c.width,c.height);
+    for(let k=0;k<n;k++){
+      const px=(k%per)*cp+1, py=Math.floor(k/per)*cp+1;
+      const u8=await svgPNG(stepSVG(ch,k),cp,cp); const im=await createImageBitmap(new Blob([u8],{type:'image/png'}));
+      x.drawImage(im,px,py,cp,cp); x.strokeStyle=GCOL[S.gcolor].b; x.lineWidth=2; x.strokeRect(px,py,cp,cp);
+      x.fillStyle='#8a8f93'; x.font='26px Arial'; x.fillText(String(k+1),px+6,py+28);
+    }
+    const u8=await new Promise(r=>c.toBlob(b=>b.arrayBuffer().then(a=>r(new Uint8Array(a))),'image/png'));
+    return {u8,w:c.width/cp*(d.dc-.25),h:c.height/cp*(d.dc-.25)};
+  }
+  const children=[];
+  for(let pi=0;pi<pages.length;pi++){
+    say('正在產生 Word…第 '+(pi+1)+' / '+pages.length+' 頁',true);
+    const runs=[new TextRun({text:S.title||'',bold:true,font:F,size:HP(8)})];
+    if(S.header) runs.push(new TextRun({text:'\t姓名＿＿＿＿＿＿＿　日期＿＿＿＿＿＿＿',font:F,size:HP(4.2)}));
+    children.push(new Paragraph({pageBreakBefore:pi>0,tabStops:[{type:TabStopType.RIGHT,position:TW(186)}],border:{bottom:{style:BorderStyle.SINGLE,size:8,color:GB,space:4}},spacing:{after:TW(1.5)},children:runs}));
+    children.push(new Paragraph({spacing:{after:TW(2.5)},children:[new TextRun({text:numNote(),font:F,size:HP(4),color:GB})]}));
+    for(const ch of pages[pi]){
+      const data=SD[ch];
+      let bigKids;
+      if(data){
+        const inner=bigSVG(ch).replace(/^<svg[^>]*>/,'').replace(/<\/svg>$/,'');
+        const u8=await svgPNG('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="#fff"/>'+G1024+inner+'</svg>',720);
+        bigKids=[new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:0,after:0},children:[new ImageRun({type:'png',data:u8,transformation:{width:PX(d.big-.8),height:PX(d.big-.8)},altText:{name:ch,description:'「'+ch+'」的筆順數字圖',title:ch}})]})];
+      } else bigKids=[P([new TextRun({text:ch,font:F,size:HP(d.big*.8)})],d.big-1)];
+      const right=[];
+      if(!data) right.push(new Paragraph({children:[new TextRun({text:'這個字目前還沒有數字筆順，可以到「筆順製作」頁自己排好筆順，或切換到「教育部筆順圖」版。',font:F,size:HP(3.6),color:'8A8F93'})]}));
+      else{
+        right.push(new Paragraph({spacing:{after:TW(1)},children:[new TextRun({text:(S.decomp?'筆畫分解　':'')+'共 '+data.s.length+' 畫',font:F,size:HP(3.6),color:'555555'})]}));
+        if(S.decomp){ const dp=await decompPNG(ch); right.push(new Paragraph({children:[new ImageRun({type:'png',data:dp.u8,transformation:{width:PX(dp.w),height:PX(dp.h)},altText:{name:ch,description:'「'+ch+'」筆畫分解',title:ch}})]})); }
+      }
+      children.push(new Table({columnWidths:[TW(d.big),TW(4),TW(d.W-d.big-4)],width:{size:TW(d.W),type:WidthType.DXA},layout:TableLayoutType.FIXED,rows:[new TableRow({children:[
+        new TableCell({width:{size:TW(d.big),type:WidthType.DXA},margins:{top:0,bottom:0,left:0,right:0},borders:all,children:bigKids}),
+        new TableCell({width:{size:TW(4),type:WidthType.DXA},borders:none,children:[new Paragraph('')]}),
+        new TableCell({width:{size:TW(d.W-d.big-4),type:WidthType.DXA},margins:{top:0,bottom:0,left:0,right:0},borders:none,children:right})]})]}));
+      children.push(new Paragraph({spacing:{before:0,after:0,line:TW(3),lineRule:LineRuleType.EXACT},children:[]}));
+      const rows=[];
+      for(let r=0;r<+S.prows;r++){
+        const cells=[];
+        for(let i=0;i<d.per;i++){
+          const idx=r*d.per+i, tr=idx<S.reps, rs=[]; const g=gRun(s); if(g) rs.push(g);
+          if(tr) rs.push(new TextRun({text:ch,font:F,size:HP(s*.84),color:TC})); else rs.push(new TextRun({text:'',size:2}));
+          cells.push(new TableCell({width:{size:TW(s),type:WidthType.DXA},verticalAlign:VerticalAlign.TOP,margins:{top:0,bottom:0,left:0,right:0},borders:all,children:[P(rs,s*.97)]}));
+        }
+        rows.push(new TableRow({height:{value:TW(s-.3),rule:HeightRule.EXACT},cantSplit:true,children:cells}));
+      }
+      children.push(new Table({rows,columnWidths:Array(d.per).fill(TW(s)),width:{size:TW(s)*d.per,type:WidthType.DXA},layout:TableLayoutType.FIXED}));
+      children.push(new Paragraph({spacing:{before:0,after:0,line:TW(5),lineRule:LineRuleType.EXACT},children:[]}));
+    }
+    children.push(new Paragraph({children:[new TextRun({text:NUM_SOURCE,size:HP(3),color:'8A8F93',font:{eastAsia:'微軟正黑體',ascii:'Arial',hAnsi:'Arial'}})]}));
+  }
+  const doc=new Document({creator:'筆順寫字本產生器',title:S.title||'筆順練習',styles:{default:{document:{run:{font:F}}}},
+    sections:[{properties:{page:{size:{width:TW(210),height:TW(297)},margin:{top:TW(11),bottom:TW(8),left:TW(12),right:TW(12),header:0,footer:0}}},children}]});
+  return Packer.toBlob(doc);
+}
+async function toDOCX(){
+  if(S.mode==='num') return toDOCXnum();
+  if(S.dirOff==='h') return toDOCXoffH();
+  const D=await lib('docx');
+  const {Document,Packer,Paragraph,TextRun,ImageRun,Table,TableRow,TableCell,WidthType,BorderStyle,VerticalAlign,HeightRule,AlignmentType,TableLayoutType,LineRuleType,TabStopType,HorizontalPositionRelativeFrom,VerticalPositionRelativeFrom,TextWrappingType}=D;
+  const {d,pages}=buildPages();
+  const TW=v=>Math.round(v*56.6929), HP=v=>Math.max(2,Math.round(v*2.8346*2)), PX=mm=>Math.round(mm/25.4*96);
+  const s=d.s, F={ascii:OFFICE_FONT,eastAsia:OFFICE_FONT,hAnsi:OFFICE_FONT,cs:OFFICE_FONT};
+  const GB=hex(GCOL[S.gcolor].b), TC=hex(TCOL[S.tcolor]);
+  const guide=await guidePNG(600);
+  const on={style:BorderStyle.SINGLE,size:6,color:GB}, off={style:BorderStyle.NONE,size:0,color:'FFFFFF'};
+  const P=(runs,h,align)=>new Paragraph({alignment:align||AlignmentType.CENTER,spacing:{before:0,after:0,line:TW(h),lineRule:LineRuleType.EXACT},children:runs});
+  const gRun=()=>guide?new ImageRun({type:'png',data:guide,transformation:{width:PX(s),height:PX(s)},floating:{horizontalPosition:{relative:HorizontalPositionRelativeFrom.COLUMN,offset:0},verticalPosition:{relative:VerticalPositionRelativeFrom.PARAGRAPH,offset:0},behindDocument:true,allowOverlap:true,layoutInCell:true,lockAnchor:true,wrap:{type:TextWrappingType.NONE}}}):null;
+  const cellOf=c=>{
+    const runs=[]; const g=gRun(); if(g) runs.push(g);
+    if(c.ch) runs.push(new TextRun({text:c.ch,font:F,size:HP(s*.84),color:c.k==='model'?'1A1A1A':TC}));
+    if(!runs.length) runs.push(new TextRun({text:'',size:2}));
+    return new TableCell({width:{size:TW(s),type:WidthType.DXA},verticalAlign:VerticalAlign.TOP,margins:{top:0,bottom:0,left:0,right:0},borders:{top:on,bottom:on,left:on,right:on},children:[P(runs,s*.97)]});
+  };
+  const gap=()=>new TableCell({width:{size:TW(d.ggap),type:WidthType.DXA},margins:{top:0,bottom:0,left:0,right:0},borders:{top:off,bottom:off,left:off,right:off},children:[P([new TextRun({text:'',size:2})],.5)]});
+  const children=[];
+  for(let pi=0;pi<pages.length;pi++){
+    say('正在產生 Word…第 '+(pi+1)+' / '+pages.length+' 頁',true);
+    const chars=[...pages[pi]].reverse(); // Word 表格由左到右，最後一個字在最左邊
+    const cols=[], strips={};
+    for(const ch of chars){ if(STROKE_CHARS.has(ch)) strips[ch]=await pngBytes(ch); }
+    chars.forEach((ch,j)=>{ if(j) cols.push(TW(d.ggap)); for(let c=0;c<+S.cols;c++) cols.push(TW(s)); cols.push(TW(stripW(ch,d))); });
+    const rows=[];
+    for(let r=0;r<d.rows;r++){
+      const cells=[];
+      chars.forEach((ch,j)=>{
+        if(j) cells.push(gap());
+        const pc=cellsFor(ch,d);
+        for(let c=+S.cols-1;c>=0;c--) cells.push(cellOf(pc[c][r]));
+        if(r===0){
+          const sw=stripW(ch,d);
+          const kids=STROKE_CHARS.has(ch)
+            ?[new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:0,after:0},children:[new ImageRun({type:'png',data:strips[ch],transformation:{width:PX(sw),height:PX(d.colh)},altText:{name:ch,description:'「'+ch+'」的筆順',title:ch}})]})]
+            :[P([new TextRun({text:'查無筆順提示',font:F,size:HP(3.4),color:'9AA0A6'})],5)];
+          cells.push(new TableCell({rowSpan:d.rows,width:{size:TW(sw),type:WidthType.DXA},verticalAlign:VerticalAlign.TOP,margins:{top:0,bottom:0,left:0,right:0},borders:{top:on,bottom:on,left:on,right:on},children:kids}));
+        }
+      });
+      rows.push(new TableRow({height:{value:TW(s-.3),rule:HeightRule.EXACT},cantSplit:true,children:cells}));
+    }
+    const runs=[new TextRun({text:S.title||'',bold:true,font:F,size:HP(8)})];
+    if(S.header) runs.push(new TextRun({text:'\t姓名＿＿＿＿＿＿＿　日期＿＿＿＿＿＿＿',font:F,size:HP(4.2)}));
+    children.push(new Paragraph({pageBreakBefore:pi>0,tabStops:[{type:TabStopType.RIGHT,position:TW(186)}],border:{bottom:{style:BorderStyle.SINGLE,size:8,color:GB,space:4}},spacing:{after:TW(1.5)},children:runs}));
+    children.push(new Paragraph({spacing:{after:TW(2.5)},children:[new TextRun({text:'先看右邊的筆順，再寫黑色範字、描淡色字，最後在空格自己寫。',font:F,size:HP(4),color:GB})]}));
+    children.push(new Table({rows,columnWidths:cols,width:{size:cols.reduce((a,b)=>a+b,0),type:WidthType.DXA},layout:TableLayoutType.FIXED,alignment:AlignmentType.RIGHT}));
+    children.push(new Paragraph({spacing:{before:TW(2)},children:[new TextRun({text:SOURCE,size:HP(3),color:'8A8F93',font:{eastAsia:'微軟正黑體',ascii:'Arial',hAnsi:'Arial'}})]}));
+  }
+  const doc=new Document({creator:'筆順寫字本產生器',title:S.title||'筆順練習',styles:{default:{document:{run:{font:F}}}},
+    sections:[{properties:{page:{size:{width:TW(210),height:TW(297)},margin:{top:TW(11),bottom:TW(8),left:TW(12),right:TW(12),header:0,footer:0}}},children}]});
+  return Packer.toBlob(doc);
+}
+
+let busy=false;
+async function doExport(kind){
+  if(busy) return;
+  if(!charList().length){ txt.focus(); say('請先貼上文章或生字'); return; }
+  busy=true; document.querySelectorAll('.acts .act').forEach(b=>b.disabled=true);
+  try{
+    say('正在準備檔案…',true);
+    if(S.mode==='num') await loadData(charList());
+    const blob=kind==='docx'?await toDOCX():kind==='pptx'?await toPPTX():await toPDF();
+    const name=fileBase()+'.'+kind;
+    saveFile(name,blob); say('已下載 '+name);
+  }catch(e){
+    console.error(e); clearExport();
+    if(location.protocol==='file:') say('直接在電腦上開啟時無法下載檔案，請放到網站上使用，或先用「列印」存成 PDF');
+    else say(e&&e.message==='lib'?'下載工具載入失敗，請確認網路後再試一次':'產生檔案時發生問題，請再試一次');
+  }finally{
+    busy=false; document.querySelectorAll('.acts .act').forEach(b=>b.disabled=false);
+  }
+}
+$('#btnDocx').onclick=()=>doExport('docx');
+$('#btnPptx').onclick=()=>doExport('pptx');
+$('#btnPdf').onclick=()=>doExport('pdf');
+
+render();
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fit);
+})();
+</script>
+</body>
+</html>

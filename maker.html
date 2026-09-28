@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>筆順製作｜筆順寫字本產生器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EDEEF0;--panel:#fff;--ink:#23262A;--muted:#62686F;--line:#D5D8DC;--red:#C23B2E;--red-soft:#F8E6E3;
+  --kai:"LXGW WenKai TC","標楷體","DFKai-SB",serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#1A1C1F;--panel:#24272B;--ink:#ECEDEE;--muted:#A3A8AE;--line:#3A3E44;--red:#EE7A6C;--red-soft:#3A2826}}
+:root[data-theme="dark"]{--bg:#1A1C1F;--panel:#24272B;--ink:#ECEDEE;--muted:#A3A8AE;--line:#3A3E44;--red:#EE7A6C;--red-soft:#3A2826}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;line-height:1.6;font-size:15px}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+header{max-width:1180px;margin:0 auto;padding:20px 18px 8px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.seal{width:50px;height:50px;background:var(--red);border-radius:6px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 3px var(--bg),inset 0 0 0 5px var(--red);flex:none}
+.seal span{font-family:var(--kai);font-size:32px;color:#fff;line-height:1}
+header h1{font-family:var(--kai);font-size:26px;margin:0;line-height:1.2}
+header p{margin:0;color:var(--muted);font-size:13.5px}
+header a{margin-left:auto;color:var(--red);font-weight:700;text-decoration:none;border:1.5px solid var(--red);border-radius:10px;padding:6px 14px}
+main{max-width:1180px;margin:0 auto;padding:8px 18px 60px;display:grid;grid-template-columns:260px 1fr auto;gap:18px;align-items:start}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.lbl{display:block;font-weight:500;font-size:14px;margin-bottom:6px}
+.pick{display:flex;gap:8px}
+.pick input{width:100%;font-family:var(--kai);font-size:28px;text-align:center;border:1.5px solid var(--line);border-radius:10px;padding:4px;background:transparent}
+.pick button,.btn{border:1.5px solid var(--red);background:transparent;color:var(--red);border-radius:10px;padding:8px 14px;font-weight:700;cursor:pointer;white-space:nowrap}
+.btn.fill{background:var(--red);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.hint{font-size:13px;color:var(--muted);margin:8px 0 0}
+.saved{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.saved button{font-family:var(--kai);font-size:22px;width:44px;height:44px;border:1.5px solid var(--line);border-radius:8px;background:transparent;cursor:pointer}
+.saved button:hover{border-color:var(--red)}
+.status{border-left:3px solid var(--red);background:var(--red-soft);padding:10px 12px;border-radius:0 8px 8px 0;font-size:14px;margin-bottom:14px}
+.stage{display:flex;flex-direction:column;align-items:center;gap:12px}
+.bigwrap{width:min(480px,100%);aspect-ratio:1;background:#fff;border:2px solid #D9534A;position:relative}
+.bigwrap .guide{position:absolute;inset:0;width:100%;height:100%}
+.bigwrap .gl{position:absolute;inset:0;width:100%;height:100%}
+.bigwrap .gl path{cursor:pointer}
+.bigwrap.picking .gl path:hover{fill:#FCE3E0}
+.tools{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.cmp{display:flex;gap:10px;background:#fff;border-radius:10px;padding:10px;border:1px solid var(--line)}
+.cmp figure{margin:0;text-align:center;font-size:12px;color:#62686F;display:flex;flex-direction:column;align-items:center}
+.cmp .off{height:var(--h);width:auto;display:block}
+.cols{display:flex;gap:6px;height:var(--h)}
+.col{display:flex;flex-direction:column}
+.col svg{width:calc(var(--h)/16);height:calc(var(--h)/16);display:block}
+.empty{color:var(--muted);font-size:14px;padding:30px 10px;text-align:center}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--panel);padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:60;max-width:calc(100% - 32px);text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (max-width:980px){ main{grid-template-columns:1fr} .cmpcard{justify-self:center} }
+</style>
+</head>
+<body>
+<header>
+  <div class="seal" aria-hidden="true"><span>製</span></div>
+  <div><h1>筆順製作</h1><p>對照教育部筆順提示圖，把還沒有數字筆順的字排好順序，加入寫字本</p></div>
+  <a href="index.html">回寫字本</a>
+</header>
+<main>
+  <section class="card">
+    <label class="lbl" for="ch">要製作的字</label>
+    <div class="pick"><input id="ch" maxlength="2" autocomplete="off" placeholder="字"><button type="button" id="go">開啟</button></div>
+    <p class="hint">輸入一個字後按「開啟」。</p>
+    <span class="lbl" style="margin-top:18px">已製作的字</span>
+    <div class="saved" id="saved"></div>
+    <p class="hint" id="savedHint"></p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+      <button class="btn" type="button" id="dl">下載 custom.js</button>
+    </div>
+    <p class="hint">製作好的字會存在這台電腦的瀏覽器，寫字本馬上就能用。要讓其他人也能用，請下載 custom.js，取代網站上的 strokedata/custom.js。</p>
+  </section>
+
+  <section class="card stage">
+    <div class="status" id="status" style="align-self:stretch">輸入一個字開始。</div>
+    <div class="bigwrap" id="big"></div>
+    <div class="tools">
+      <button class="btn" type="button" id="pick">重新點選順序</button>
+      <button class="btn" type="button" id="undo">上一步</button>
+      <button class="btn" type="button" id="suggest">套用自動建議</button>
+      <button class="btn" type="button" id="reset">還原</button>
+      <button class="btn fill" type="button" id="save">確認無誤，加入寫字本</button>
+      <button class="btn" type="button" id="del">刪除這個字</button>
+    </div>
+  </section>
+
+  <section class="card cmpcard">
+    <span class="lbl">一筆一筆對照</span>
+    <div class="cmp" id="cmp" style="--h:480px"><div class="empty">開啟一個字後，<br>這裡會並排顯示<br>教育部筆順與目前的順序</div></div>
+    <p class="hint">左邊是教育部提示圖，右邊是目前的順序，每一格要一模一樣。</p>
+  </section>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="strokedata/custom.js"></script>
+<script src="stroke-common.js"></script>
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const OK=new Set(Array.from("一七丈三上下不且世乎九也乾並中丰主久么亂了事二互五些今介仍他付代以件任份交京亮人什休似但佈位使低住佔何作你例便係保信修們倒候借值假偉做停健傘備傢先光克兒入內傳傷僅像價億儘優元充几出刀全兩八公六共其具典再冒冬冰冷准分切划初判別利刮到制刷刻前剛創劃劇力功加助努動務勝化北勢包卡印危區十千升午半南可台史右司各合受口古句另只叫同名后向否吧原去參又及友反叔取吵吹告呢周味命和咖咱品哈員哥哪哭唱商啊問啡啤喂善喊喜喝喫單嗎嘴器噹嚮四回因困土在地坐國園團城基堂堅報場塊境增壓多夜夠大天太夫失奇套壞夏外女奶她好如妹妻始姐姑姓婚姨娘媒媽子字存季孩學它安完定宜客宣室害家容富察實寫就居封將專對小少屋展層屬山工左巧差己已市布希師帶常帽幣幫干平年幸幹幾广床底店度座庭康建弄式廠廣形彩影弟張強彆往待很後得從復心必志忘忙快念忽怎怕思急性怪恐您情想意愛愿態慢慣慶應成我批找技或戲所手才打把抓拉拍拿持指按挺掃掉排掛採接推提換握搬擔據播擇支收改放故效救教敢散整數文斐料族日早明易斤新斷方於旁旅星春昨是時晚晨普景晴暖更書曾最月有朋服望板果朝期木末本朵李材村束杯東架某查校條根格桌梯椅楚概榦樂樓標檢樣樹橋機次歷死歌歡止正此步武歲段母每比毛民氣決水永汁求汽沒沙河油況法注泳洗洞活派流浪海消涼淨深清渴游湖湯準溫滿漂漢澡濟火為烈然煉煙照煩熊熟熱燒營父爸爺牆片牌牙牛物特爬爭狀狗玩理班現球瓶生產用由男界留畫環瓜當疼病痛的瘦發白百盃看眼盤目直相省眾睛睡知短矮石破瞭碗碰礎示社祇祝神票福禮秋科租程種稱積空穿突笑立站章第筆等答簡筷箇算管箱節篇籃米系精糕紀約紅紙級累紹經綠終組絕給網緊練總績羊繫繼續習美群義耳老考者而肉育背聊聞聯聰聲職胖能腦腳腿臉臟自至花色般船苦舊舒舞英苹茶草菜華菸萬落藉藍處號藝藥蘋蛋衣表衫被血行術衕街複褲裙補裝裡襯西要覆見規視親覺觀角解言訂計討訓記訪設許訴証評詞試話該誌認語誤說誰課調談請論講謝象證警議護讀變讓負責貴買費資賓賣賽走起超越趕趣足跑路跳踢身車迎近較輕輛迴迷追退送這通速造連道達遠週進遇遊運過辦農輸轉適遲部郵都鄉鄰那配酒里重金醣醫鉛銀錄錢錯錶鍛鍾鐘鐵長門開間閤闆關防阿附院除陰陽隊際隨險集雲零電需雖雙雜雞難雨雪青靜非靠面鞋音響頁順須預頓領頭顯風飛題顏願類食飯飲飽餃養餓館餵首香馬騎驗髒體高髮鬚鮮鳥麗麵麼黃黑點鼻齊齣龍龠"));
+const AVAIL=new Set(Array.from("丁万丏丐丑丕丘丙丞丟丫串丸丹乂乃乍乒乓乖乘乙乜乞乩乳予亍于仇仉仔仕仗仙仝仞仟令仨仰仲仳仿企云井亙亞亡亢亥亦亨享亭仁仃仄仆伉伊伍伎伏伐伕伙伯估伴伶伸伺伽佃佇佐佑佗佘余佚佛佝佞佟佣佩佬佯佰佳併佶佻佼佾侃侄來侈侍侏侑侔侖侗供依侮侯侵侶侷促俄俊俎俏俐俑俗俘俚俛俞俟俠俯俱俳俸俺俾倀倆倉個倌倍倔倖倘倚倜倡倥倦倨倩倪倫倭偃偈偎偏偕側偵偶偷傅傍傑傖傚催傭傯債傻傾僂僉僑兌免兔兕兗党兜兢兮兵兼冀冉冊冑儒儕償儡儲儷儸儻儼兀允兄兆兇僕僖僚僥僧僭僮僱僵僻儀儂儈儉儋冕冗冠冢冤冥冪冶冽凋凌凍凜凝凡凰凱凳凶凸凹函刁刃刈刊刎刑列刨刪券刺剁剃則削剋剌剎剔剖剜剝剩剪剮劭劾勁勃勇勉勒勖勘勛勞勤勦副割剷剽剿劈劉劊劍劑劓劣劫劬勰勵勸勺勻勾勿匆匈匍匏匐匕匙匝匠匡匣匪匭匯匱匹匾卅卉卑卒卓協博卜卞占卣卦卮卯即卵卷卹卻卿厄厘叵叼吁吃吆吉吊吋吏吐吒君吝吞吟厚厝厥厭厲叉叛叢叨叩召叭叮叱吠吩含吭吮吱吳吶吻吼吾呀呂呃呆呈呎呦呱呵呶呷呸呻呼咀咂咄咆咋咎咐咒咕咚咦咧咨咩咪咫咬咯咳咸咻咽咿哀哂哄哆哇哉哦哧哨哩哮哲哺哼哽唁唄唆唉唏唐唑唔唧唬售唯唳唸啁啃啄啐啕啖啜啞啟啥啦啪啻啼啾喀喁喃喇喉喋喑喔喘喙喚喟喧喨喪喬喱喲喳喻嗅嗆嗇嗑嗓嗔嗚嗜嗝嗡嗣嗤嗥嗦嗨嗩嗯嗲嗽嗾嘀嘆嘈嘉嘍嘎嘏嘔嘖嘗嘛嘬嘮嘰嘲嘶嘹嘻嘿噁噌噎噓噗噘噤噥噩噪噫噬噯噱噴噸嚀嚅嚇嚎嚏囊囌囑囚囝囟囡囤囪囫囷囹固囿嚓嚕嚥嚨嚴嚷嚼囀囂囈囉圃圄圇圈圉圍圓圖圜圩圬圭圮圯圳圻址均坊坍坎坏坑坡坤坦坩坪坯坳坶坷坼垃型垌垓垛垠垢垣垮埂埃埋埒埔埕域埠埤埴執埸培堀堆堇堊堞塵塹塾墀墅墉墊墨墩堡堤堪堯堰堵塋塌塑塗塘塚塞塢填壬壯壹壺壽夔夕夙夢夤夥夭央夯夷夸墳墾壁壅壇壑壕壘壟壢壤壩士奪奮奴奸妁妃妄妊妍妒妓妖妙妝妞妣夾奄奈奉奎奏奐契奔奕奘奚奠奢奧奩妤妥妨妮妯妲妳妾姆委姘姚姜姝姣姥姦姪姬姮姻姿威娃娉娌娑娓婦婪婷婿媚媛媧媲媳媾嫁娛娟娠娣娥娩娶娼婁婆婉婊婕婢嫉嫌嫖嫗嫘嫚嫡嫣嫦嫩嫵嫻嬈嬉嬋嬌嬖嬗嬪嬰嬴嬸孀孃孑孓孔孕孚孜孝孟孢孤孥孫孬孰孱孳孵孺孿宅宇守宋宏宓宕宗官宙宛宥宦宮宰宴宵宸宿寂寄寅密寇寐寒寡寢導尖尚尤尬尷尸尹尺尻尼尾尿局屁屆屈屌屍屎屏屐屑屜屠屢屣履寤寥寧寨審寬寮寰寵寶寸寺射尉尊尋屨屯屹岐岑岔岡岩岫岬岱岳岷岸峇峋峒峙峨峪峭峰島峻峽崆崇崎崑崔崖崗崙崛崢崩崴崽嵇嵊嵋嵌嵐嵩嶂嶄嶇嶗嶙嶝嶷嶸嶺嶽巿帆帑帔帕帖帘帙帚帛帝帥席帳帷巒巔巖川州巢巫巳巴巷巹巽巾弈弊弋弒弓弔引弗弘弛弦弧弩弭弱弼幀幃幄幅幌幔幗幛幟幡幢并幻幼幽庇序庖庚府庠庫庵庶庸庾廁廂廄廈廉廖廚廝廟廡廢廩廬廳廿弁彰彳彷役彼彿征徇徉徊律徐徑徒徘徙徜徠徨循微徵德徼徽忌忍忐忑忒忖忝忠忡忤忪忮忱忸忻忿怍怏怒怔彀彈彊彌彎彖彗彘彙彞彤彥彪彬彭怖怙怠怡怦怨怩怯怵恁恃恆恍恕恙恚恢恣恤恥恨恩恪恫恬恭息恰恿悃悄悅悉悌悍悒悔悖悚悟悠患悱悲悴悵悶悸悻悼悽惆惋惑惕惘惚惜惟惠惡惦惰惱惴惶惺惻愀愁愆愈愉愍愎愕愚愜感愣愫愴愷愾慄慈慊慍慎慘慚慟慧慨慫慮慳慵慷慼慾憂憊憋憎憐憑憔憚憤憧憩憫憬憲憶憾懇懈懋懟懣懦懨懲房扁扇扈扉扎扒扔托扛扣扦扭扮扯懶懷懸懺懼懾懿戀戇戈戊戌戍戎戒戕戚戛戟戡戥截戮戰戳戴戶戽戾扳扶扼承抄抉抑抒投抖抗折抨披抬抱抵抹押抽抿拂拄拆拇拈拊拋拌拎拐拓拔拖拗拘拙拚招拜括拭拮拯拱拳拴拶拷拼拽拾挈挑挖挨挫振挲挹挽挾捂捅捆捉捌捍捎捏捐捕捧捨捩捫据捱捲捷捺捻掀掂掄掇授掌掏掐掖掘掙掠探掣控掩措掬掮掰揀揄揆揉揍插揖揚揠揣揩揪揭揮援損搏搐搖搗搞搦搪搶摀摑摒摔摘摟摧摩摭摯摳摶摺摻摽撂撅撇撈撐撒撓撕撞撣撥撩撫撬撮撰撲撼撿擀擁擂擄擅擊擋操擘擠擢擤擦擬擯擰擱攤攪攫攬攸攻政敉敏敕敗敘敝敞斥斧斫斬斯施旄旆旋旌旎旖旗既擴擷擺擻擾攀攆攏攔攘攙攛攜攝攢攣敦敲敵敷敻斂斃斌斑斕斗斛斜斟斡旦旨旬旭旮旯旰旱旺昀昂昃昆昇昉昊昌昏昔映昧昭昱昴昵昶晁晃晉晌晏晒晝晤晦晬晰晶晷智晾暄暇暈暉暑朧未札朮朱朴朽杆杈杉杌杏杓杖杜曜曝曦曩曰曲曳曷曹曼替會朔朕朗暗暝暢暨暫暱暴暾曆曇曉曖曙杞杪杭杰杲杳杵杷杼松枇枉枋析枒枕林枚枝枯枰枷枸柄柏柑柒染柔柙柚柝柞柢柩柬柯柱柳柴柵柿栓栖栗栩株栱核栽桀桁桂桃桅框案桎桐桑桓桔桕桶桿梁梅梏梓梔梗梟梢梧梨梭械梵棉棋棍棒棕棗棘棚棟棠棣棧森棱棲棵棹棺棻棼植椎椒椪椹椽椿楂楊楓楔楝楞楠楣楨楫業極楷楹榆榕榛榜榧榨榫榭榮榴榷槁槃槊構槍槓槭槳槽槿樁樅樊樞樟樨樵樸樽橇橈橘橙橫檀檄檐檔檜檯檳檸檻櫃櫓欠欣欲欷欸欺欽款歃歆歇歉歎歐歔櫛櫞櫟櫥櫪櫫櫻欄權欒欖欞歙歧歪歸歹殂殃殄殆殉殊殖殘汀汆汊汐汕汗汛汜汝汞江池污汨殞殤殪殫殭殮殯殲殷殼殽殿毀毅毆毋毖毗毫毯毳氅氆氈氏氐氓氖氛氟氡氤氦氧氨氫氮氯氰氳氾汩汪汰汴汶汾沁沂沃沅沆沈沉沌沏沐沓沖沛沫沮沱沸治沼沽沾沿泄泅泉泊泌泓泗泠泡波泣泥泫泮泯泰泱泵洄洋洌洎洒洙洛津洩洪洫洱洲洵洶洽浙浚浞浣浦浩浮浴浸浹涂涅涇涉涌涓涔涕涪涮涯液涵涸淄淅淆淇淋淌淑淒淖淘淙淚淝淞淡淤淦淩淪淫淬淮淳混淹淺添淼渙渚減渝渡渣渤渥渦渫測渭港渲渺渾湃湄湊湍湎湔湘湛湧湮溉源溘溜溝溟溢溥溪溯溴溶溺溽滂滄滅滇滋滌滎滓滔滕滬滯滲滴滷滸滾漁漆漉漏演漕漚漩漪漫漬漯漱漲漳漶漸漾漿潑澆澇澎澗澠澤澧澱澹激濁濂潔潘潛潞潟潤潦潭潮潰潸潺潼澀澄濃濕濘濛濠濡濤濫濯濱濺濾瀆瀉瀋灑灘灣灰灶灸灼災炊炎炒炔瀏瀑瀕瀘瀚瀛瀝瀣瀧瀨瀰瀾炕炙炤炫炭炮炯炳炷炸烊烏烘烙烝烤烯烴烷烹烽焉焊焙焚無焦焰焱煌煎煜煞煢煤煥煦煬煮煲煽熄熏熒熔熙熠熨熹熾燃燈燉燎燔燕燙燜燥燦燬燭燮燴燹燻燼燾爆牝牟牠牡牢牧牯牲牴牽牾犀犁犄犒犢犧犬犯犰狁狂狄狎狐狒狙狠爍爐爛爪爰爵爹爻爽爾版牒牖牘猥猩猴猶狡狩狳狷狸狹狺狼狽猓猖猙猛猜猝猢獵獷獸獻玄率玉王玖玟珮琅琛琢琥琦琨琪琬琮玨玫玲玳玷玻珀珂珈珊珍珞珠珥珩猷猻猿獄獅獎獐獗獠獨獲琰琳琴琵琶瑁瑄瑋瑕瑗瑙瑚瑜瑞瑟瑣瑤瑩瑪瑾璀璇璋璐瓣瓤甘甚甜甥甦甩璞璣璦璧璨璩璽瓊瓏瓔瓞瓠瓢甫甬甭田甲申甸町畀畎畏畔畚畛畜疔疙疚疝疣疤疥疫疱疲疳疵疸疹疽疾痂症痊痍痔痕痘痙痞痢痣痤痧畝略畦番畬異畸畹畿疆疇疊疋疑痰痱痲痴痺痼痿瘀瘁瘋瘌瘓瘠瘡瘤瘧瘴瘸療癆癇癌癒皇皈皋皎皓皖皙皚皤皮皰皴皺皿盂盅盆盈益盍盎盒盔盛盜盞盟盡監盥癖癘癟癢癥癩癬癰癱癲癸登皂皆盧盪盯盲盹盼盾眄眇眈眉眚真眠眥眩眶眷眸眺睇睏睜睞睢督睥睦睨睪睫睬睹睽睿瞅瞋瞌瞎瞑瞟瞠瞥矛矜矢矣矯矸矻矽砂砌砍砒研砝砥砧砰砲砷砸硃硝硬确硯硼瞧瞪瞬瞳瞵瞻瞼瞽瞿矇矍矓矗矚礙礦礬祀祆祈祉祕碇碉碌碎碑碓碘碟碣碧碩碳碴確碼碾祖祗祚祛祜祟祠祥祧祭祺祿禁禍禎磁磅磊磐磔磕磚磨磬磯磴磷礁禧禪禱禳禹禺禾禿秀私秉秒秘秣秤秦秧秩移稀稅稈稍稔稗稚稜穢穩穫穴究穹窄窈窒窕窖窗窘窟窠稞稟稠稷稹稻稼稽稿穀穆穌穎穗穡童竦竭端競竹竺竽竿笄笆笏笙笛笞窣窩窪窬窮窯窳窸窺竄竅竇竟竣笠符笨笳筊筋筌筍筏筐筑筒策筠筮筱筲箋箍箏箔箕箜箝箭箴箸篁範篆築篋篌篙篝篡篤篥篦篩篾簇簌簏簞簟簣簪簷簸簽簾簿籀籌籍籙籟籠籤籮籲籽粉粑粒粕粗粘粟粥粱粲粳粵粹粼粽糸糾紂紆紇紈紉紊紋納紐紓純紕紗紛紜素紡索紫紮細紳紺紼絀糊糌糖糗糜糞糟糠糢糧糬糯糰絆結絛絜絞絡絢絨絮絲絳絹絻綏綜綢綣綬維綱綴綵綸綹綺緬緯緲縈縊縛縞縟縣綻綽綿緋緒緘線緝緞締緣編緩縮縱縴縵縷縹繁繃繆繇繒織繕繚纜缶缸缺缽罄罅罈罌罔罕罟罡罩罪置罰署罵罷罹羅羆羈羋繞繩繪繭繯繳繹繽纂纍纏纓纔纖羔羚羨羯羲羸羹羼羽羿翁翅翊翌耀耄耆耋耍耐耒耕耗耘耙耜耦耨耵翎翔翕翟翠翡翦翩翮翰翱翳翹翻翼聿肄肆肇肋肌肓肖肘肚肛肝股肢肥耷耽耿聃聆聒聖聘聚聳聵聶聽聾肩肪肫肯肱肴肺肽胃胄胎胚胛胝胞胡胤胥胭胯胰胱胳胴胸胺胼脂脅脆脈脊脖脛脣脩脫脯脹脾腆腋腌腎腐腑腓腔腕腥腩腫腮腰腴腸腹腺膀膈膊膏膚膛膝膠膨膩膳膺膽膾膿臀臂臃臆臊臼臾舀舂舅興舉舌舍舐舔舛舜舟舢臍臘臚臠臢臣臥臧臨臬臭臺臻舨航舫舳舴舵舶舷舸艉艋艙艦艮良艱芻苧茲荊莊莖莢莧萊葉葦葷蒐蒔蓋蔔蒞蒟蒻蒼蔣蔥蔬蕉蕎蕢蕩蕪薈薊薑薔薦薺藪藹藺蘄蘆蘇蘊蘚蘭蘿虎虐虔虛虜虞虢虧虫虱虹虺虻蚊蚋蚌蚍蚓蚜蚣蚧蚩蚪蚯蚱蚵蚶蛀蛄蛆蛇蛉蛐蛔蛙蛛蛟蛤蛩蛭蛹蛺蛻蛾蜀蜂蜃蜇蜈蜉蜊蜍蜘蜚蜜蜡蜢蜥蜩蜴蜷蜻蜿蝌蝕蝗蝙蝟蝠蝣蝦蝨蝴蝶蝸螃螅螈融螗螞螟螢螫螳螺螻螽蟀蟄蟈蟊蟋蟑蟠蟪蟬蟯蟲蠼衊衍衖衙衚衛衝衡衢衩衰衲衷衹衽蟹蟻蟾蠅蠍蠑蠔蠕蠟蠡蠢蠣蠱蠶蠹蠻衾衿袁袂袈袋袍袒袖袞袱裁裂裊裎裔裕裘裟裨裱裳裴裸裹裼裾褂褊褐觳觴觸訃訇訊訌訕訖託訛訝訟褒褓褚褥褫褶褸褻襄襖襞襟襠襤襪襲覃覈覓覦覬覲覽觥觫訣訥訶診註訾詆詈詐詔詛詠詡詢詣詩詫詬詭詮詰詳詹詼誅誆誇誑誓誘誠誡誣誦誨誹誼諂諄諉諒諛諜諡諢諦諧諫諭諮諱諳諶諷諸諺諾謀謁謂謄謅謊謐謔謗謙謠謨謫謬謳謹謾譎譏譖識譚譜譬譯讒讖讚讞谷谿豁豆豇豈豉豌豎貝貞財貢貧貨販貪貫貯貲貳貸貼貽豐豔豕豚豢豪豬豹豺貂貉貊貌貍貓貿賀賁賂賃賄賅賈賊賑賒賜賞賠賢賤賦質賬賭賴賺購贄贅贈贊贍贏趨趴趵趺趾跂跆跋跌跎跏跖跚跛贓贖贗贛赤赦赧赫赭赳赴趁趄趑趙趟跟跡跤跨跪跫跺跽踅踉踏踐踘踝蹊蹋蹌蹙蹚蹟蹣蹤蹦蹧蹩踞踟踩踮踱踴踵踹踽蹂蹄蹇蹈蹬蹭蹲蹴蹶蹺蹼躁躅躉躊躋躍躓躕躡躪躬躲躺軀軋軌軍軒軔軛軟軫軸軻軼軾載輊輒輓輔輝輟輦輩輪輯輻輾輿轂轄轅轆轎轟轡轤辛辜辟辣辨辭辮辯辰辱遍選邑邕還邊酉酊酋酌酗酚酡酢酣酥酩酪酬酮酯酲酵酶酷酸酹醃醅醇醉醋醍醐醒野量釐釗釘釜針釣釦釧釵鈉鈍鈔鈕鈞鈣鈦鈴鈷鈺鈽鈾鈿鉀鉗醜醞醢醬醮醱醴醺釀釁采釋鉚鉤鉧鉸鉻銅銑銓銖銘銜銬銲銳銷銼鋃鋅鋒鋤鋪鋰鋸鋼錐鍥鍬鎂鎊鎔鎖鎢鎧錕錙錚錠錦錨錫錮錳鍊鍋鎬鎮鎳鏖鏟鏡鏢鐐鐮鐲鐺鑄鑊閉閎閏閑閒閔閘閡閣閥閨閩閫閱閹閻閼闃闈闊闌闔闕闖闡闢阜鑑鑒鑠鑣鑪鑫鑰鑲鑷鑼鑾鑿閂閃隸隹隻隼雀雁雄雅雇雉雋雌雍雎雒雕雛雝離雩雯雷雹霄震霈霉霍霎霏靈靖靚靛靡靦革靳靴靶靼鞅鞍鞏鞘霑霓霖霜霞霧霪霰露霸霹霽霾靂鞠鞣鞦鞭韁韆韋韌韓韙韜韭韶韻頂頃項頊頌頏頑頒頗頡頤頦頰顴颭颯颱颳颶飄飆飢飧飩飪飫飭頷頸頹頻顆額顎顓顙顛顥顧顫顰顱飴飼飾餅餉餌餐餑餒餘餚餛餞餡餬餮餾饃饅饈饉饋饌饑饒饕駙駛駝駟駢駭駱駿騁騅騖饜饞馗馘馥馨馭馮馱馳馴駁駐駑駒駕騙騫騮騰騾驀驅驕驚驛驟驢驤驥驪骯髖髟髡髦髫髭髯髹髻鬃鬆鬈鬍鬟鬢鬣鬥鬧鬨鬩鬱鬲魎魘魚魠魯魷鮑鮪鮫鮭鯇鯉鯊鯖鯗鯛鯤鯧鯨鯰鯽鰈鰓鰣鰥鳳鳴鳶鴆鴇鴉鴒鴕鴛鴞鴟鴣鴦鴨鴻鰭鰲鰹鰻鰾鱈鱉鱒鱔鱖鱗鱷鱸鳧鳩鴿鵑鵜鵝鵠鵡鵪鵬鵰鵲鶉鶘鶩鶯鶴鶺鶻鶼鷂鷓鷗鷦鷯鷲鷸鷹鷺鸚鸝鸞鹵鹹鹼鹽鹿麂麇麈麋麒麓麝麟麥麩麴麻麾黍黎黏黔默黛黜黝黟黠黥黨黯黴黷黹黻黼黽黿鼓鼕鼙鼠齬齲齷龐龔龕鼬鼯鼴鼾齋齎齒齜齟齡齦齧齪"));
+const MOE=new Set(Array.from("䠷一丁七万丈三上下不丏丐丑且丕世丘丙丞丟並丫中丰串丸丹主乂乃久么之乍乎乏乒乓乖乘乙乜九乞也乩乳乾亂了予事二亍于云互五井亙些亞亟亡亢交亥亦亨享京亭亮人什仁仃仄仆仇仉今介仍仔仕他仗付仙仝仞仟代令以仨仰仲仳件任份仿企伉伊伋伍伎伏伐休伕伙伯估伴伶伸伺似伽佃但佇佈位低住佐佑佔何佗佘余佚佛作佝佞佟你佣佩佬佯佰佳併佶佻佼佾使侃侄來侈例侍侏侑侔侖侗供依侮侯侵侶侷便係促俄俊俎俏俐俑俗俘俚俛保俞俟俠信修俯俱俳俸俺俾倀倆倉個倌倍倏們倒倔倖倘候倚倜借倡倣倥倦倨倩倪倫倭值偁偃假偈偉偌偎偏偕做停健側偵偶偷偺偽傀傅傍傑傖傘備傚傢催傭傯傲傳傴債傷傻傾僂僅僇僉像僑僕僖僚僥僧僭僮僱僵價僻儀儂億儆儈儉儋儐儒儔儕儘償儡優儲儷儸儻儼兀允元兄充兆兇先光克兌免兒兔兕兗党兜兢入內全兩八公六兮共兵其具典兼冀冇冉冊再冑冒冕冗冠冢冤冥冪冬冰冶冷冽准凋凌凍凜凝几凡凰凱凳凶凸凹出函刀刁刃分切刈刊刎刑划列初判別刨利刪刮到制刷券刺刻剁剃則剉削剋剌前剎剔剖剛剜剝剩剪剮副割剴創剷剽剿劃劇劈劉劊劌劍劑劓力功加劣助努劫劬劭劻劾勁勃勇勉勒動勖勗勘務勛勝勞募勢勤勦勰勵勸勺勻勾勿包匆匈匍匏匐匕化北匙匝匠匡匣匪匭匯匱匹匾匿區十千卅升午卉半卑卒卓協南博卜卞占卡卣卦卮卯印危即卵卷卸卹卻卿厄厘厚厝原厥厭厲去參又叉及友反叔取受叛叟叡叢口古句另叨叩只叫召叭叮可台叱史右叵司叼吁吃各吆合吉吊吋同名后吏吐向吒吔君吝吞吟吠否吧吩含吭吮吱吳吵吶吸吹吻吼吽吾呀呂呃呆呈告呎呢呦周呱味呵呶呷呸呻呼命咀咂咄咆咋和咎咐咒咕咖咚咦咧咨咩咪咫咬咯咱咳咸咻咽咿哀品哂哄哆哇哈哉哎員哥哦哧哨哩哪哭哮哲哺哼哽唁唄唆唉唏唐唑唔唧唬售唯唱唳唷唸唾啁啃啄商啊問啐啕啖啗啜啞啟啡啣啤啥啦啪啷啻啼啾喀喁喂喃善喇喉喊喋喏喑喔喘喙喚喜喝喟喧喨喪喫喬單喱喲喳喵喻嗅嗆嗇嗎嗑嗓嗔嗚嗜嗝嗟嗡嗣嗤嗥嗦嗨嗩嗯嗲嗶嗷嗽嗾嘀嘆嘈嘉嘍嘎嘏嘔嘖嘗嘛嘟嘩嘬嘮嘯嘰嘲嘴嘶嘹嘻嘿噁噌噎噓噗噘噙噠噢噤噥器噩噪噫噬噯噱噴噶噸噹嚀嚅嚇嚎嚏嚐嚓嚕嚥嚦嚨嚭嚮嚴嚶嚷嚼囀囁囂囈囉囊囌囍囑囓囚四囝回囟因囡囤囪囫困囷囹固囿圃圄圇圈圉國圍園圓圖團圜土在圩圬圭圮圯地圳圻圾址均坊坍坎坏坐坑坡坤坦坩坪坯坳坵坶坷坼垂垃型垌垓垛垠垢垣垮埂埃埋城埒埔埕域埠埤埳埴執埸培基堀堂堅堆堇堊堞堡堤堪堯堰報場堵塊塋塌塑塔塗塘塚塞塢填塭塵塹塾墀境墅墉墊墓墘墜增墟墦墨墩墮墳墾壁壅壇壎壑壓壕壘壙壚壞壟壢壤壩士壬壯壹壺壽夏夔夕外夙多夜夠夢夤夥大天太夫夭央夯失夷夸夾奄奇奈奉奎奏奐契奔奕套奘奚奠奢奧奩奪奮女奴奶奸她好妁如妃妄妊妍妒妓妖妙妝妞妣妤妥妨妮妯妲妳妹妺妻妾姆姊始姍姐姑姒姓委姘姚姜姝姣姥姦姨姪姬姮姻姿威娃娉娌娑娓娘娛娜娟娠娣娥娩娶娼婀婁婆婉婊婕婚婢婦婪婷婿媒媚媛媢媧媯媲媳媼媽媾嫁嫂嫄嫉嫋嫌嫏嫖嫗嫘嫚嫡嫣嫦嫩嫵嫻嬈嬉嬋嬌嬖嬗嬙嬝嬡嬤嬪嬰嬴嬸孀孃子孑孓孔孕字存孚孜孝孟孢季孤孥孩孫孬孰孱孳孵學孺孽孿它宅宇守安宋完宏宓宕宗官宙定宛宜客宣室宥宦宮宰害宴宵家宸容宿寂寄寅密寇富寐寒寓寞察寡寢寤寥實寧寨審寫寬寮寰寵寶寸寺封射將專尉尊尋對導小少尖尚尟尤尪尬就尷尸尹尺尻尼尾尿局屁居屆屈屋屌屍屎屏屐屑展屘屙屜屠屢屣層履屨屬屯山屹屼岌岐岑岔岡岩岫岬岱岳岷岸峇峋峒峙峨峪峭峰島峻峽崁崆崇崎崑崔崖崗崙崛崢崩崴崽嵇嵊嵋嵌嵎嵐嵩嵬嵯嶂嶄嶇嶔嶗嶙嶝嶠嶷嶸嶺嶼嶽巉巍巒巔巖川州巡巢工左巧巨巫差己已巳巴巷巹巽巾巿市布帆希帑帔帕帖帘帙帚帛帝帥帨師席帳帶帷常帽幀幃幄幅幌幔幕幗幛幟幡幢幣幪幫干平年并幸幹幻幼幽幾广庇床序底庖店庚府庠度座庫庭庵庶康庸庾廁廂廄廈廉廊廓廖廚廝廟廠廡廢廣廩廬廳延廷建廿弁弄弈弊弋式弒弓弔引弗弘弛弟弦弧弩弭弱張強弼彀彆彈彊彌彎彖彗彘彙彞形彤彥彩彪彫彬彭彰影彳彷役彼彿往征待徇很徉徊律後徐徑徒得徘徙徜從徠御徨復循徬微徵德徹徼徽心必忌忍忐忑忒忖志忘忙忝忠忡忤忪快忮忱念忸忻忽忿怍怎怏怒怔怕怖怙思怠怡急怦性怨怩怪怯怵恁恃恆恍恐恕恙恚恢恣恤恥恨恩恪恫恬恭息恰恿悃悄悅悉悌悍悒悔悖悚悟悠患您悱悲悴悵悶悸悻悼悽惄情惆惋惑惕惘惚惜惟惠惡惦惰惱惲想惴惶惹惺惻愀愁愆愈愉愍愎意愒愕愚愛愜感愣愧愨愫愬愴愷愾愿慄慇慈慊態慌慍慎慓慕慘慚慝慟慢慣慧慨慫慮慰慳慵慶慷慼慾憂憊憋憎憐憑憒憔憚憤憧憨憩憫憬憲憶憾懂懃懇懈應懊懋懍懟懣懦懨懲懵懶懷懸懺懼懾懿戀戇戈戊戌戍戎成我戒戕或戚戛戟戡戢戥戩截戮戰戲戳戴戶戽戾房所扁扇扈扉手才扎扒打扔托扛扞扣扦扭扮扯扳扶批扼找承技抄抆抉把抑抒抓投抖抗折抨披抬抱抵抹押抽抿拂拄拆拇拈拉拊拋拌拍拎拏拐拒拓拔拖拗拘拙拚招拜括拭拮拯拱拳拴拶拷拼拽拾拿持指挈按挑挖挨挪挫振挲挹挺挽挾捂捅捆捉捌捍捎捏捐捕捧捨捩捫据捱捲捶捷捺捻掀掂掃掄掇授掉掌掏掐排掖掘掙掛掠採探掣接控推掩措掬掮掰揀揄揆揉揍描提插揖揚換揠握揣揩揪揭揮援揶揹搆損搏搐搓搔搖搗搜搞搢搥搦搧搪搬搭搯搶搽搾摀摑摒摔摘摜摟摧摩摭摯摳摶摸摹摺摻摽撂撅撇撈撐撒撓撕撚撞撢撣撤撥撩撫撬播撮撰撲撻撼撿擀擁擂擄擅擇擊擋操擎擒擔擘據擠擢擣擤擦擫擬擯擰擱擲擴擷擺擻擾攀攆攏攔攘攙攛攜攝攢攣攤攪攫攬支收攷攸改攻放政故效敉敏救敕敖敗敘教敝敞敢散敦敬敲整敵敷數敻斂斃文斌斐斑斕斗料斛斜斟斡斤斥斧斫斬斯新斲斷方於施旁旄旅旆旋旌旎族旖旗旛既日旦旨早旬旭旮旯旰旱旺旻昀昂昃昆昇昉昊昌明昏易昔星映春昧昨昭是昱昴昵昶晁時晃晉晌晏晒晚晝晞晤晦晨晬普景晰晴晶晷智晾暄暇暈暉暑暖暗暝暢暨暫暮暱暴暹暾曄曆曇曉曖曙曜曝曠曦曩曰曲曳更曷書曹曼曾替最會月有朋服朔朕朗望朝期朦朧木未末本札朮朱朴朵朽杆杈杉杌李杏材村杓杖杜杞束杪杭杯杰東杲杳杵杷杼松板枇枉枋析枒枕林枚果枝枯枰枴架枷枸柄柏某柑柒染柔柙柚柝柞柢查柩柬柯柱柳柴柵柿栓栖栗校栩株栱核根格栽桀桁桂桃桅框案桌桎桐桑桓桔桕桶桿梁梃梅梆梏梓梔梗條梟梢梧梨梭梯械梱梳梵棄棉棋棍棒棕棗棘棚棟棠棣棧森棰棱棲棵棹棺棻棼椅植椎椏椒椪椰椹椽椿楂楊楓楔楚楝楞楠楣楨楫業極楷楹概榆榔榕榛榜榦榧榨榫榭榮榴榷榻槁槃槊構槌槍槎槐槓槤槨槭槳槽槿樁樂樅樊樓標樞樟模樣樨樵樸樹樺樽橄橇橈橋橘橙機橡橢橫檀檃檄檐檔檜檠檢檣檬檯檳檸檻櫂櫃櫓櫚櫛櫝櫞櫟櫥櫪櫫櫬櫸櫺櫻欄權欒欖欞欠次欣欬欲欷欸欺欽款歃歆歇歉歌歎歐歔歙歟歡止正此步武歧歪歲歷歸歹死歿殂殃殄殆殉殊殖殘殛殞殤殪殫殭殮殯殲段殷殺殼殽殿毀毅毆毋母每毒毓比毖毗毛毫毬毯毳毽氅氆氈氌氏氐民氓氖氛氟氡氣氤氦氧氨氫氬氮氯氰氳水永氾汀汁求汆汊汎汐汕汗汙汛汜汝汞江池污汨汩汪汰汲汴汶決汽汾沁沂沃沅沆沈沉沌沏沐沒沓沖沙沛沫沮沱河沸油治沼沽沾沿況泄泅泉泊泌泐泓法泗泛泠泡波泣泥注泫泮泯泰泱泳泵洄洋洌洎洒洗洙洛洞津洩洪洫洱洲洵洶活洽派流浙浚浞浣浥浦浩浪浬浮浴海浸浹涂涅涇消涉涌涎涓涔涕涪涮涯液涵涸涼淄淅淆淇淋淌淑淒淖淘淙淚淝淞淡淤淦淨淩淪淫淬淮深淳淵混淹淺添淼清渙渚減渝渠渡渣渤渥渦渫測渭港渲渴游渺渾湃湄湊湍湎湔湖湘湛湧湮湯湳溉源準溘溜溝溟溢溥溪溫溯溲溴溶溺溼溽滂滄滅滇滋滌滎滑滓滔滕滫滬滯滲滴滷滸滾滿漁漂漆漉漏漓演漕漚漠漢漣漩漪漫漬漯漱漲漳漶漸漾漿潁潑潔潘潛潞潟潢潤潦潭潮潰潸潺潼澀澄澆澇澈澎澗澠澡澣澤澧澮澱澳澹激濁濂濃濕濘濛濟濠濡濤濫濬濯濱濺濾瀆瀉瀋瀏瀑瀕瀘瀚瀛瀝瀟瀣瀦瀧瀨瀰瀲瀾灌灑灕灘灝灣灤灩火灰灶灸灼災炊炎炒炔炕炙炤炫炬炭炮炯炳炷炸為烈烊烏烘烙烝烤烯烴烷烹烽焉焊焙焚無焦焰焱然焿煉煌煎煒煙煜煞煠煢煤煥煦照煩煬煮煲煽熄熊熏熒熔熙熟熠熨熬熱熹熾燁燃燄燈燉燊燎燐燒燔燕燙燜營燠燥燦燧燬燭燮燴燹燻燼燾爆爍爐爛爨爪爬爭爰爵父爸爹爺爻爽爾牆片版牋牌牒牖牘牙牛牝牟牠牡牢牧物牯牲牴牷特牽牾犀犁犄犍犒犖犛犢犧犬犯犰狀狁狂狄狎狐狒狗狙狠狡狩狳狷狸狹狺狼狽猓猖猙猛猜猝猢猥猩猴猶猷猻猾猿獃獄獅獎獐獒獗獠獨獪獰獲獵獷獸獺獻獼獾玀玁玄率玉王玕玖玟玦玨玩玫玲玳玷玻珀珂珈珊珍珞珠珥珩珪班珮現球琅理琇琉琊琍琛琢琤琥琦琨琪琬琮琰琱琳琴琵琶琺琿瑁瑄瑋瑕瑗瑙瑚瑛瑜瑞瑟瑣瑤瑩瑪瑯瑰瑾璀璃璇璉璋璐璜璞璣璦璧璨璩璫環璽璿瓊瓏瓔瓜瓞瓠瓢瓣瓤瓦瓮瓶瓷甄甌甍甑甕甘甚甜生產甥甦用甩甫甬甭田由甲申男甸町甽畀界畎畏畔留畚畛畜畝畢略畦番畫畬異當畸畹畿疆疇疊疋疏疑疔疙疚疝疢疣疤疥疫疱疲疳疵疸疹疼疽疾痀痂病症痊痍痔痕痘痙痛痞痠痢痣痤痧痰痱痲痴痺痼痾痿瘀瘁瘉瘋瘌瘍瘓瘖瘝瘞瘟瘠瘡瘤瘦瘧瘩瘴瘸瘼療癆癇癌癒癖癘癟癢癤癥癩癬癮癰癱癲癸登發白百皂的皆皇皈皋皎皓皖皙皚皤皮皰皴皸皺皿盂盃盅盆盈益盍盎盒盔盛盜盞盟盡監盤盥盦盧盪目盯盲直相盹盼盾省眄眇眈眉眊看眚真眠眥眨眩眶眷眸眺眼眾睇睏睛睜睞睡睢督睥睦睨睪睫睬睹睽睿瞄瞅瞇瞋瞌瞎瞑瞞瞟瞠瞥瞧瞪瞬瞭瞰瞳瞵瞷瞻瞼瞽瞿矇矍矓矗矚矛矜矢矣知矩短矮矯矱石矸矻矽砂砌砍砒研砝砥砧砭砰砲破砵砷砸硃硓硝硫硬确硯硼碇碉碌碎碑碓碗碘碟碣碧碩碰碳碴確碼碾磁磅磊磋磐磔磕磚磧磨磬磯磴磷磺礁礎礙礦礨礪礫礬礱礴示社祀祁祂祆祇祈祉祐祕祖祗祚祛祜祝神祟祠祥祧票祭祺祼祿禁禍禎福禦禧禨禪禮禱禳禹禺禽禾禿秀私秈秉秋科秒秘租秣秤秦秧秩秭移稀稅稈程稍稔稗稚稜稞稟稠種稱稷稹稻稼稽稿穀穆穌積穎穗穠穡穢穩穫穴究穹空穿突窄窆窈窒窕窖窗窘窟窠窣窩窪窬窮窯窳窸窺窿竄竅竇竊立站竟章竣童竦竭端競竹竺竽竿笄笆笈笏笑笙笛笞笠符笨笫第笳筆等筊筋筌筍筏筐筑筒答策筠筧筮筱筲筵筷箇箋箍箏箔箕算箜箝管箭箱箴箸節篁範篆篇築篋篌篙篛篝篠篡篣篤篥篦篩篳篷篾簇簌簍簏簑簞簟簡簣簧簪簫簷簸簽簾簿籀籃籌籍籐籙籜籟籠籤籥籩籬籮籲米籽粉粑粒粕粗粘粟粥粱粲粳粵粹粼粽精粿糊糌糕糖糗糙糜糝糞糟糠糢糧糨糬糯糰糴糶糸系糾紀紂約紅紆紇紈紉紊紋納紐紓純紕紗紘紙級紛紜紝素紡索紫紮累細紳紹紺紼紿絀終絃組絆結絕絛絜絞絡絢給絨絮統絲絳絹絻綁綃綏綑經綜綞綠綢綣綬維綰綱網綴綵綸綹綺綻綽綾綿緇緊緋緒緘線緝緞締緡緣編緩緬緯緲練緹緻縈縊縋縐縑縛縝縞縟縣縫縮縱縲縴縵縷縹總績繁繃繅繆繇繒織繕繚繞繡繩繪繫繭繯繳繹繼繽繾纂續纍纏纓纔纖纛纜缶缸缺缽罄罅罈罌罍罏罐罔罕罟罡罣罩罪置罰署罵罷罹羅羆羈羊羋羌美羑羔羚羞群羨義羯羲羶羸羹羼羽羿翁翅翊翌翎習翔翕翟翠翡翦翩翫翮翰翱翳翹翻翼耀老考耄者耆耋而耍耐耒耕耗耘耙耜耦耨耳耵耶耷耽耿聃聆聊聒聖聘聚聞聯聰聱聲聳聵聶職聹聽聾聿肄肅肆肇肉肋肌肓肖肘肚肛肝股肢肥肩肪肫肯肱育肴肺肽胃胄背胎胖胚胛胝胞胡胤胥胭胯胰胱胳胴胸胺胼能脂脅脆脈脊脖脛脣脩脫脯脹脾腆腋腌腎腐腑腓腔腕腥腦腩腫腮腰腱腳腴腸腹腺腿膀膈膊膏膚膛膜膝膠膨膩膳膺膽膾膿臀臂臃臆臉臊臍臏臘臚臞臟臠臢臣臥臧臨自臬臭至致臺臻臼臾舀舂舅與興舉舊舌舍舐舒舔舛舜舞舟舢舨航舫般舳舴舵舶舷舸船舺艇艉艋艘艙艤艦艫艮良艱色艾芃芊芋芍芎芒芙芝芟芡芥芬芭芮芯芰花芳芷芸芹芻芽芾苑苒苓苔苕苗苛苜苞苟苡苣若苦苧苫苯英苹苻茁茂范茄茅茆茉茗茜茨茫茭茯茱茲茴茵茶茸茹茼荀荃荇草荊荏荐荑荒荔荳荷荸荻荼莆莉莊莎莒莓莖莘莞莠莢莧莪莫莽菁菅菇菊菌菖菜菟菠菡菩菫華菰菱菲菴菸菽萃萄萊萋萌萍萎萏萬萱萵萸萼落葆葉著葚葛葡董葦葩葫葬葭葯葳葵葷葺蒂蒐蒔蒙蒜蒞蒟蒡蒯蒲蒴蒸蒹蒺蒻蒼蒿蓀蓁蓄蓆蓉蓊蓋蓑蓓蓖蓧蓬蓮蓼蓽蓿蔑蔓蔔蔗蔘蔚蔡蔣蔥蔬蔭蔻蔽蕁蕃蕈蕉蕊蕎蕙蕞蕢蕤蕨蕩蕪蕭蕾薄薇薈薊薌薏薑薔薙薛薜薤薦薨薩薪薯薰薺藉藍藏藐藕藜藝藤藥藩藪藷藹藺藻蘄蘅蘆蘇蘊蘋蘑蘗蘚蘭蘸蘿虎虐虔處虛虜虞號虢虧虫虯虱虹虺虻蚊蚋蚌蚍蚓蚜蚣蚤蚧蚩蚪蚯蚱蚵蚶蛀蛄蛆蛇蛉蛋蛐蛔蛙蛛蛟蛤蛩蛭蛹蛺蛻蛾蜀蜂蜃蜆蜇蜈蜉蜊蜋蜍蜒蜓蜘蜚蜜蜡蜢蜥蜩蜴蜷蜻蜿蝌蝕蝗蝙蝟蝠蝣蝦蝨蝴蝶蝸螂螃螅螈融螗螞螟螢螫螯螳螺螻螽蟀蟄蟆蟈蟊蟋蟑蟒蟠蟪蟬蟯蟲蟳蟹蟻蟾蠅蠍蠑蠔蠕蠟蠡蠢蠣蠱蠶蠹蠻蠼血衊行衍術衕衖街衙衚衛衝衡衢衣表衩衫衰衲衷衹衽衾衿袁袂袈袋袍袒袖袞袪被袱裁裂裊裎裔裕裘裙補裝裟裡裨裱裳裴裸裹裼製裾褂複褊褐褒褓褚褡褥褪褫褲褳褶褸褻襁襄襖襞襟襠襤襪襬襯襲西要覃覆覈見規覓視覦親覬覲覷覺覽觀角觔解觥觫觳觴觸觿言訂訃訇計訊訌討訏訐訓訕訖託記訛訝訟訣訥訪設許訴訶診註証訾詁詆詈詎詐詔評詛詞詠詡詢詣試詩詫詬詭詮詰話該詳詹詼誄誅誆誇誌認誑誓誕誘語誠誡誣誤誥誦誨說誰課誹誼調諂諄談諉請諍諒諕論諛諜諡諢諦諧諫諭諮諱諳諶諷諸諺諼諾謀謁謂謄謅謊謎謏謐謔謗謙講謝謠謨謫謬謳謹謾譁證譎譏譖識譚譜譟警譬譯議譴護譽讀變讋讎讒讓讖讚讜讞谷谿豁豆豇豈豉豌豎豐豔豕豚象豢豪豫豬豹豺貂貉貊貌貍貓貝貞負財貢貧貨販貪貫責貯貲貳貴貶買貸費貼貽貿賀賁賂賃賄賅資賈賊賑賒賓賜賞賠賡賢賣賤賦質賬賭賴賸賺購賽贄贅贈贊贍贏贐贓贖贗贛赤赦赧赫赭走赳赴起趁趄超越趑趕趙趟趣趨足趴趵趺趾趿跂跆跋跌跎跏跑跖跚跛距跟跡跤跨跩跪跫路跳跺跼跽踅踉踏踐踘踝踞踟踢踦踩踫踮踰踱踴踵踹踽蹂蹄蹇蹈蹉蹊蹋蹌蹐蹓蹕蹙蹚蹟蹠蹣蹤蹦蹧蹩蹬蹭蹲蹴蹶蹺蹼躁躂躅躇躉躊躋躍躑躓躕躡躪身躬躲躺軀車軋軌軍軒軔軛軟軫軸軻軼軾較載輊輒輓輔輕輛輜輝輞輟輦輩輪輯輳輸輻輾輿轂轄轅轆轉轍轎轔轟轡轤辛辜辟辣辦辨辭辮辯辰辱農迂迄迅迆迍迎近迒迓返迕迢迤迥迦迨迪迫迭述迴迷迸迺追退送逃逄逅逆逋逍透逐逑途逕逖逗這通逛逝逞速造逡逢連逭逮週進逵逶逸逼逾遁遂遄遇遊運遍過遏遐遑遒道達違遘遙遛遜遝遞遠遢遣遨適遭遮遯遲遴遵遶遷選遺遼遽避邀邁邂邃還邅邇邈邊邋邏邐邑邕邢那邦邪邯邰邱邵邸郁郊郎郛郝郡郢部郭郵都鄂鄉鄒鄔鄘鄙鄞鄢鄧鄭鄯鄰鄱鄲鄹鄺酆酈酉酊酋酌配酒酗酚酡酢酣酥酩酪酬酮酯酲酵酶酷酸酹醃醅醇醉醋醍醐醒醚醛醜醞醢醣醫醬醮醯醰醱醴醺釀釁采釉釋里重野量釐金釗釘釜針釣釦釧釵鈉鈍鈐鈑鈔鈕鈞鈣鈦鈴鈷鈸鈺鈽鈾鈿鉀鉅鉋鉑鉗鉚鉛鉤鉦鉧鉸鉻銀銃銅銑銓銖銘銜銬銲銳銷銻銼鋁鋃鋅鋌鋏鋒鋙鋤鋪鋰鋸鋼錄錐錕錘錙錚錠錡錢錦錨錫錮錯錳錶鍇鍊鍋鍍鍔鍘鍛鍥鍬鍰鍵鍺鍾鎂鎊鎔鎖鎗鎘鎚鎢鎧鎩鎬鎮鎰鎳鏃鏇鏈鏍鏑鏖鏗鏘鏜鏝鏞鏟鏡鏢鏤鏹鏽鐃鐐鐘鐙鐫鐮鐲鐳鐵鐸鐺鑄鑊鑑鑒鑠鑣鑪鑫鑰鑱鑲鑷鑼鑽鑾鑿長門閂閃閉開閎閏閑閒間閔閘閡閣閤閥閨閩閫閭閱閹閻閼闃闆闇闈闊闋闌闐闓闔闕闖關闡闢闥阜阡阢阨阪阮阱防阻阿陀附陋陌降限陘陛陝陞陟陡院陣除陪陰陲陳陴陵陶陷陸陽隄隅隆隈隉隊隋隍階隔隕隘隙際障隤隧隨險隰隱隳隴隸隹隻隼雀雁雄雅集雇雉雋雌雍雎雒雕雖雙雛雜雝雞離難雨雩雪雯雰雱雲零雷雹電需霄霆震霈霉霍霎霏霑霓霖霜霞霤霧霪霰露霸霹霽霾靂靄靈青靖靚靛靜非靠靡面靦靨革靳靴靶靼鞅鞋鞍鞏鞘鞠鞣鞦鞭韁韃韆韋韌韓韙韜韞韭音韶韻響頁頂頃項順頇須頊頌頎頏預頑頒頓頗領頡頤頦頫頭頰頷頸頹頻顆題額顎顏顓願顙顛類顢顥顧顫顯顰顱顴風颭颯颱颳颶颺颼飄飆飛食飢飧飩飪飫飭飯飲飴飼飽飾餃餅餉養餌餐餑餒餓餔餘餚餛餞餡館餬餮餳餵餽餾餿饃饅饈饉饋饌饑饒饕饗饘饜饞首馗馘香馥馨馬馭馮馱馳馴駁駐駑駒駕駘駙駛駝駟駢駭駱駸駿騁騂騃騅騎騏騖騙騫騮騰騷騾驀驁驂驃驅驊驍驕驗驚驛驟驢驤驥驪骨骯骰骷骸骼骾髀髏髒髓體髖高髟髡髣髦髫髭髮髯髴髹髻鬃鬆鬈鬍鬚鬟鬢鬣鬥鬧鬨鬩鬮鬱鬲鬼魁魂魄魅魍魎魏魑魔魘魚魠魨魯魷鮑鮪鮫鮭鮮鯀鯁鯇鯈鯉鯊鯖鯗鯛鯝鯤鯧鯨鯰鯽鰈鰍鰓鰣鰥鰭鰱鰲鰹鰻鰾鱈鱉鱒鱔鱖鱗鱷鱸鳥鳧鳩鳳鳴鳶鴆鴇鴉鴒鴕鴛鴝鴞鴟鴣鴦鴨鴻鴿鵑鵜鵝鵠鵡鵪鵬鵰鵲鶉鶘鶩鶯鶴鶺鶻鶼鷂鷓鷗鷥鷦鷯鷲鷸鷹鷺鸚鸛鸝鸞鹵鹹鹼鹽鹿麂麇麈麋麒麓麗麝麟麤麥麩麰麴麵麻麼麾黃黌黍黎黏黑黔默黛黜黝點黟黠黥黨黯黴黷黹黻黼黽黿鼇鼎鼐鼓鼕鼙鼠鼬鼯鼴鼻鼾齊齋齎齏齒齔齕齜齟齡齣齦齧齪齬齲齷龍龐龔龕龜龠龢𥑮"));
+const GUIDE='<svg class="guide" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="50" y1="0" x2="50" y2="100" stroke="#EFA9A2" stroke-width=".5" stroke-dasharray="2.4 2"/><line x1="0" y1="50" x2="100" y2="50" stroke="#EFA9A2" stroke-width=".5" stroke-dasharray="2.4 2"/></svg>';
+let custom={}; try{ custom=JSON.parse(localStorage.getItem('stroke-custom')||'{}'); }catch(e){}
+const fileCustom=window.CUSTOM_SD||{};
+const store=()=>{ try{ localStorage.setItem('stroke-custom',JSON.stringify(custom)); }catch(e){} };
+const toast=$('#toast'); let tt;
+const say=m=>{ toast.textContent=m; toast.classList.add('show'); clearTimeout(tt); tt=setTimeout(()=>toast.classList.remove('show'),3000); };
+
+let ch='', base=null, suggest=null, order=[], picking=false, picked=[];
+const loaded={};
+window.__SD=(c,d)=>{ loaded[c]={s:d.s,m:d.m}; };
+window.__SRC=(c,d)=>{ loaded[c]={s:d.s,m:d.m,o:d.o,src:d.src}; };
+function load(c,path){ return new Promise(r=>{ const s=document.createElement('script'); s.src=path+encodeURIComponent(c)+'.js'; s.onload=s.onerror=()=>r(); document.head.appendChild(s); }); }
+
+function cur(){ return StrokeKit.reorder(base,order); }
+function draw(){
+  const big=$('#big');
+  if(!base){ big.innerHTML=GUIDE; $('#cmp').innerHTML='<div class="empty">沒有可用的筆畫資料</div>'; syncBtns(); return; }
+  if(picking){
+    const pos={}; picked.forEach((i,k)=>pos[i]=k);
+    const fill=base.s.map((_,i)=>i in pos?'#FDECEA':'#fff');
+    const tmp={s:base.s,m:base.m};
+    big.innerHTML=GUIDE+StrokeKit.bigSVG('pick:'+ch,tmp,{fill,labelText:i=>i in pos?String(pos[i]+1):''});
+  } else big.innerHTML=GUIDE+StrokeKit.bigSVG('cur:'+ch+':'+order.join(','),cur(),{});
+  big.classList.toggle('picking',picking);
+  // 對照
+  const d=cur(), n=d.s.length; let cols='';
+  for(let c0=0;c0<n;c0+=16){ cols+='<div class="col">'; for(let k=c0;k<Math.min(n,c0+16);k++) cols+=StrokeKit.stepSVG(d,k).replace('<svg ','<svg role="img" aria-label="第'+(k+1)+'筆" '); cols+='</div>'; }
+  const cmp=$('#cmp');
+  cmp.innerHTML=(MOE.has(ch)?'<figure><img class="off" src="strokes/'+encodeURIComponent(ch)+'.png" alt="教育部「'+ch+'」筆順提示"><figcaption>教育部</figcaption></figure>':'<figure><div class="empty">教育部提示圖<br>沒有這個字</div></figure>')+'<figure><div class="cols">'+(picking?'<div class="empty">點選完所有筆畫<br>後會顯示</div>':cols)+'</div><figcaption>目前的順序</figcaption></figure>';
+  syncBtns();
+}
+function syncBtns(){
+  const has=!!base;
+  $('#pick').disabled=!has; $('#reset').disabled=!has; $('#save').disabled=!has||picking;
+  $('#undo').disabled=!picking||!picked.length;
+  $('#suggest').disabled=!has||!suggest||picking;
+  $('#del').style.display=custom[ch]?'':'none';
+  $('#pick').textContent=picking?'取消點選':'重新點選順序';
+}
+function renderSaved(){
+  const keys=Object.keys(custom);
+  $('#saved').innerHTML=keys.map(c=>'<button type="button" data-c="'+c+'" aria-label="開啟「'+c+'」">'+c+'</button>').join('');
+  $('#savedHint').textContent=keys.length?'共 '+keys.length+' 個字，點一下可以再修改。':'還沒有製作的字。';
+}
+async function open(c){
+  c=Array.from((c||'').trim()).find(x=>/\p{Script=Han}/u.test(x))||'';
+  if(!c){ say('請輸入一個國字'); return; }
+  ch=c; $('#ch').value=c; picking=false; picked=[];
+  history.replaceState(null,'','?ch='+encodeURIComponent(c));
+  const st=$('#status');
+  if(custom[c]||fileCustom[c]){
+    const d=custom[c]||fileCustom[c]; base={s:d.s,m:d.m}; order=d.s.map((_,i)=>i); suggest=null;
+    st.textContent='「'+c+'」已經製作過，可以再調整順序後重新儲存。';
+  } else {
+    if(!loaded[c]){
+      if(OK.has(c)) await load(c,'strokedata/');
+      else if(AVAIL.has(c)) await load(c,'strokedata/src/');
+    }
+    const d=loaded[c];
+    if(!d){ base=null; st.textContent='「'+c+'」目前找不到可用的開源筆畫資料，暫時無法製作。'+(MOE.has(c)?'請改用寫字本的「教育部筆順圖」版。':''); draw(); return; }
+    base={s:d.s,m:d.m}; order=d.s.map((_,i)=>i);
+    suggest=d.o&&d.o.join(',')!==order.join(',')?d.o:null;
+    if(OK.has(c)) st.textContent='「'+c+'」已經在寫字本裡，筆順和教育部一致，不需要製作。';
+    else st.textContent='請對照右邊的教育部提示圖。順序不同時，按「重新點選順序」，依正確順序一筆一筆點大字；確認每一格都一樣後，按「確認無誤，加入寫字本」。'+(d.src==='mmah'?'這個字的資料來自依大陸筆順規範整理的開源資料，順序常和台灣不同，請特別仔細對照。':'');
+  }
+  draw();
+}
+$('#go').onclick=()=>open($('#ch').value);
+$('#ch').addEventListener('keydown',e=>{ if(e.key==='Enter') open($('#ch').value); });
+$('#saved').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) open(b.dataset.c); });
+$('#pick').onclick=()=>{ picking=!picking; picked=[]; draw(); };
+$('#undo').onclick=()=>{ picked.pop(); draw(); };
+$('#reset').onclick=()=>{ picking=false; picked=[]; order=base.s.map((_,i)=>i); draw(); };
+$('#suggest').onclick=()=>{ if(suggest){ order=suggest.slice(); draw(); say('已套用自動建議，請再對照確認'); } };
+$('#big').addEventListener('click',e=>{
+  if(!picking) return; const p=e.target.closest('path[data-i]'); if(!p) return;
+  const i=+p.dataset.i; if(picked.includes(i)) return;
+  picked.push(i);
+  if(picked.length===base.s.length){ order=picked.slice(); picking=false; say('順序排好了，請對照右邊確認'); }
+  draw();
+});
+$('#save').onclick=()=>{
+  if(!base) return;
+  custom[ch]=cur(); store(); renderSaved(); syncBtns();
+  say('「'+ch+'」已加入寫字本');
+};
+$('#del').onclick=()=>{ if(!custom[ch]) return; if(!confirm('要刪除「'+ch+'」的自製筆順嗎？')) return; delete custom[ch]; store(); renderSaved(); open(ch); };
+$('#dl').onclick=()=>{
+  const all=Object.assign({},fileCustom,custom);
+  const txt='// 由「筆順製作」頁下載的自製筆順資料，直接取代這個檔案即可\nwindow.CUSTOM_SD='+JSON.stringify(all)+';\n';
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type:'text/javascript'})); a.download='custom.js';
+  document.body.appendChild(a); a.click(); a.remove(); say('已下載 custom.js（共 '+Object.keys(all).length+' 個字）');
+};
+renderSaved(); draw();
+const q=new URLSearchParams(location.search).get('ch'); if(q) open(q);
+})();
+</script>
+</body>
+</html>
