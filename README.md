@@ -11,7 +11,7 @@
 下載的 Word、PPT 會使用電腦裡的「標楷體」；若要讓預覽和下載檔案字體一致，請在工具中選「標楷體（電腦內建）」。
 
 ## 放上 GitHub Pages
-1. 把整個資料夾上傳到一個 GitHub repository（index.html、maker.html、stroke-common.js、strokes、strokedata 都要）。
+1. 把整個資料夾上傳到一個 GitHub repository（index.html、maker.html、stroke-common.js、radicals.js、strokes、strokedata 都要）。
 2. 到 repository 的 Settings → Pages，Source 選 main 分支的根目錄，儲存。
 3. 幾分鐘後即可用 https://<帳號>.github.io/<repository 名稱>/ 開啟。
 
@@ -30,3 +30,13 @@
   以原圖未經修改方式使用，並於每頁標示出處。請勿用於商業用途，也請勿修改圖檔內容。
 - strokedata 資料夾：開源專案 animCJK 的繁體中文筆畫資料（經 hanzi-writer-data-acjk 整理），以及 Make Me a Hanzi 筆畫資料（strokedata/src 內供製作使用），
   皆依 Arphic Public License 使用，授權全文見 strokedata/ARPHICPL.TXT。
+- radicals.js：部首、總筆畫數、部首外筆畫，取自中華民國教育部《國語小字典》（dict_mini_2019_20260929），
+  小字典未收的字取自《重編國語辭典修訂本》（dict_revised_2015_20260929），
+  資料來源為教育部國語辭典公眾授權網（https://language.moe.gov.tw/001/Upload/Files/site_content/M0001/respub/index.html），
+  依「創用CC 姓名標示－禁止改作 3.0 臺灣」授權，只取上述欄位、內容未修改。
+  兩部辭典重疊的字，部首與筆畫完全一致。括號內的部首寫法（例如「艸（艹）」）是寫字本另外加上的提示，不是辭典內容。
+
+## 部首
+設定區的「部首」開關打開時，每個字會標出部首與部首外筆畫，例如「部首 禾　部首外 4 畫」；
+部首在字裡有常見的其他寫法時，會一起列出，例如「艸（艹）」「水（氵）」「手（扌）」。
+列印、Word、PPT、PDF 都會包含部首，頁尾也會加上部首資料的出處。

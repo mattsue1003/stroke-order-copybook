@@ -184,6 +184,17 @@ input[type=text]{width:100%;border:1.5px solid var(--line);border-radius:10px;pa
 .vnote{writing-mode:vertical-rl;font-size:3.4mm;color:#8a8f93;margin-left:1.5mm;letter-spacing:.5mm}
 .vtot{font-size:3.2mm;color:#555;margin-top:1mm;text-align:center}
 .vtot b{color:var(--gb)}
+/* 部首 */
+.rad{display:flex;align-items:center;gap:1.6mm;height:7mm;font-size:3.6mm;color:#555;white-space:nowrap;flex:none;line-height:1}
+.rad .rl{display:flex;align-items:center;gap:.45em}
+.rad .rr{display:inline-flex;align-items:center;height:1.8em;padding:0 .45em;border:.35mm solid var(--gb);border-radius:1.2mm;color:var(--gb);font-size:1.4em;font-weight:700;line-height:1}
+.rad.two{flex-direction:column;justify-content:center;gap:.9mm;height:12mm}
+.dec .rad{margin-bottom:1.5mm}
+.vg .rad{margin-top:1mm;align-self:stretch}
+.hzw,.gw{display:flex;flex-direction:column;flex:none}
+.hzw .rad{margin-bottom:1.5mm}
+.gw .rad{margin-bottom:1mm}
+.psrc{font-size:3mm;color:#8a8f93;margin-top:1.5mm;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -257,6 +268,7 @@ input[type=text]{width:100%;border:1.5px solid var(--line);border-radius:10px;pa
     <div class="field checks">
       <label><input type="checkbox" id="cUnique"> 重複的字只練一次</label>
       <label><input type="checkbox" id="cHeader"> 姓名日期欄</label>
+      <label><input type="checkbox" id="cRadical"> 部首</label>
     </div>
 
     <div class="field">
@@ -309,6 +321,7 @@ input[type=text]{width:100%;border:1.5px solid var(--line);border-radius:10px;pa
 
     <p class="hint">「教育部筆順圖」版：提示圖來源為中華民國教育部《國字標準字體筆順學習網》，依「創用CC 姓名標示－非商業性－禁止改作」授權原圖使用，每頁頁尾皆標示出處。</p>
     <p class="hint">「數字筆順」版：字形與筆畫資料來自開源專案 animCJK（Arphic Public License），並逐字與教育部筆順提示比對，確認一致的字才提供數字筆順；其他字請用「教育部筆順圖」版。</p>
+    <p class="hint">部首：依教育部《國語小字典》標示（小字典沒有的字依《重編國語辭典修訂本》），依「創用CC 姓名標示－禁止改作」授權使用。括號內是部首在字裡常見的寫法，例如「艸（艹）」。</p>
   </aside>
 
   <main class="preview"><div class="pages" id="pages"></div></main>
@@ -327,6 +340,7 @@ input[type=text]{width:100%;border:1.5px solid var(--line);border-radius:10px;pa
 
 <script src="strokedata/custom.js"></script>
 <script src="stroke-common.js"></script>
+<script src="radicals.js"></script>
 <script>
 (function(){
 "use strict";
@@ -344,8 +358,16 @@ const NUM_CHARS=new Set(Array.from("一七丈三上下不且世乎九也乾並�
 const NUM_SOURCE='數字筆順資料：animCJK（Arphic Public License），已與教育部筆順提示逐字比對';
 const SOURCE='筆順提示圖來源：中華民國教育部《國字標準字體筆順學習網》stroke-order.learningweb.moe.edu.tw（CC BY-NC-ND）';
 
+const RAD_SOURCE='部首資料：教育部《國語小字典》《重編國語辭典修訂本》（CC BY-ND 3.0 TW）';
+/* 部首：radicals.js 每 6 個字元一筆＝單字＋部首＋總筆畫（2 位）＋部首外筆畫（2 位） */
+const RAD={};
+(()=>{ const a=Array.from(window.RADICAL_DATA||''); for(let i=0;i+5<a.length;i+=6) RAD[a[i]]=[a[i+1],+(a[i+2]+a[i+3]),+(a[i+4]+a[i+5])]; })();
+// 部首在字裡常見的寫法，寫在括號裡，例如「艸（艹）」
+const RAD_SIDE={'水':'氵','手':'扌','艸':'艹','心':'忄','人':'亻','火':'灬','犬':'犭','示':'礻','衣':'衤','刀':'刂','邑':'阝','阜':'阝','辵':'辶','玉':'王','肉':'月','网':'罒','老':'耂','攴':'攵','糸':'糹','食':'飠','爪':'爫','牛':'牜'};
+const RH=8.5, RH2=13, RFOOT=4.5; // 部首列（一行／兩行）與頁尾部首出處佔的高度（mm）
+
 const SAMPLE='秋天到了，天氣慢慢變涼。星期天早上，我和家人一起到山上走走。山上的樹變紅了，好像一朵朵小花。風一吹，紅紅的小花輕輕落下，大家都開心的笑了。';
-const DEF={text:SAMPLE,title:'筆順練習',mode:'num',dirNum:'h',dirOff:'v',reps:3,cols:'1',prows:'1',decomp:true,arrow:true,numbers:true,unique:true,header:true,grid:'tian',gcolor:'red',tcolor:'gray',size:'18',font:'kai'};
+const DEF={text:SAMPLE,title:'筆順練習',mode:'num',dirNum:'h',dirOff:'v',reps:3,cols:'1',prows:'1',decomp:true,arrow:true,numbers:true,unique:true,header:true,radical:true,grid:'tian',gcolor:'red',tcolor:'gray',size:'18',font:'kai'};
 let S=Object.assign({},DEF);
 try{ const sv=JSON.parse(localStorage.getItem('stroke-sheet-v2')||'null'); if(sv){ delete sv.text; S=Object.assign({},DEF,sv); } }catch(e){}
 // 只記住版面設定；文章每次打開都從範例文章開始
@@ -357,6 +379,18 @@ const FONTS={kai:'"LXGW WenKai TC","標楷體","DFKai-SB","BiauKai",serif',biauk
 const OFFICE_FONT='標楷體';
 const HAN=/\p{Script=Han}/u;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function radOf(ch){ const r=S.radical&&RAD[ch]; return r?{r:r[0],side:RAD_SIDE[r[0]]||'',total:r[1],out:r[2]}:null; }
+const radName=o=>o.r+(o.side?'（'+o.side+'）':'');
+const footH=()=>S.radical?RFOOT:0;
+// 窄的直式字組：字要縮小到放得下「部首 艸（艹）」
+function radFS(o,w){ return Math.min(3.6,(w-1.5)/(4.1+1.4*Array.from(radName(o)).length),(w-1.5)/6.5); }
+function radHTML(ch,w){
+  const o=radOf(ch); if(!o) return '';
+  const st=w?' style="width:'+w.toFixed(2)+'mm;font-size:'+radFS(o,w).toFixed(2)+'mm"':'';
+  return '<div class="rad'+(w?' two':'')+'"'+st+'><span class="rl"><span class="rk">部首</span><b class="rr">'+esc(radName(o))+'</b></span><span class="ro">部首外 '+o.out+' 畫</span></div>';
+}
+const radFoot=()=>S.radical?'<div class="psrc">'+RAD_SOURCE+'</div>':'';
 
 function guideLines(type){
   const L=[];
@@ -382,7 +416,7 @@ function charList(){
   return out;
 }
 function dims(){
-  const s=parseFloat(S.size), W=186, H=238;
+  const s=parseFloat(S.size), W=186, H=238-footH()-(S.radical?RH2:0);
   const rows=Math.floor((H+.3)/(s-.3)), colh=rows*(s-.3)+.3, ggap=Math.max(3,s*.2);
   return {s,rows,colh,ggap,W};
 }
@@ -396,9 +430,10 @@ function cellsFor(ch,d){
   return cols;
 }
 function hdims(){
-  const s=parseFloat(S.size), W=186, H=238;
-  const rows=Math.max(3,Math.floor((110-.3)/(s-.3))), bh=rows*(s-.3)+.3;
-  return {s,W,H,rows,bh,colh:bh,gap:6,ggap:6,hz:true};
+  const s=parseFloat(S.size), W=186, H=238-footH();
+  // 一頁排兩個字；部首列和頁尾出處的高度從練習格扣
+  const rh=S.radical?RH:0, rows=Math.max(3,Math.floor((110-.3-rh-footH()/2)/(s-.3))), bh=rows*(s-.3)+.3;
+  return {s,W,H,rows,bh,colh:bh,gap:6,ggap:6,hz:true,rh};
 }
 function hPer(ch,d){ return Math.floor((d.W-stripW(ch,d)-3+.3)/(d.s-.3)); }
 function hCells(ch,d){
@@ -412,11 +447,11 @@ function groupHTMLh(ch,d,g){
   const strip=STROKE_CHARS.has(ch)
     ?'<div class="strip" style="width:'+stripW(ch,d).toFixed(2)+'mm"><img src="'+imgURL(ch)+'" alt="「'+esc(ch)+'」的筆順"></div>'
     :'<div class="strip miss">查無筆順提示</div>';
-  return '<div class="grp hz" data-ch="'+esc(ch)+'">'+strip+'<div class="hgrid">'+hCells(ch,d).map(r=>'<div class="line">'+r.map(c=>cellHTML(c,g)).join('')+'</div>').join('')+'</div></div>';
+  return '<div class="hzw">'+radHTML(ch)+'<div class="grp hz" data-ch="'+esc(ch)+'">'+strip+'<div class="hgrid">'+hCells(ch,d).map(r=>'<div class="line">'+r.map(c=>cellHTML(c,g)).join('')+'</div>').join('')+'</div></div></div>';
 }
 function buildPages(){
   if(S.dirOff==='h'){
-    const d=hdims(), pages=[], per=Math.max(1,Math.floor((d.H+d.gap)/(d.bh+d.gap))), list=charList();
+    const d=hdims(), pages=[], per=Math.max(1,Math.floor((d.H+d.gap)/(d.bh+d.rh+d.gap))), list=charList();
     for(let i=0;i<list.length;i+=per) pages.push(list.slice(i,i+per));
     return {d,pages};
   }
@@ -435,14 +470,15 @@ function groupHTML(ch,d,g){
   const strip=STROKE_CHARS.has(ch)
     ?'<div class="strip" style="width:'+stripW(ch,d).toFixed(2)+'mm"><img src="'+imgURL(ch)+'" alt="「'+esc(ch)+'」的筆順"></div>'
     :'<div class="strip miss">查無筆順提示</div>';
-  return '<div class="grp" data-ch="'+esc(ch)+'">'+strip+cellsFor(ch,d).map(col=>'<div class="pcol">'+col.map(c=>cellHTML(c,g)).join('')+'</div>').join('')+'</div>';
+  const grp='<div class="grp" data-ch="'+esc(ch)+'">'+strip+cellsFor(ch,d).map(col=>'<div class="pcol">'+col.map(c=>cellHTML(c,g)).join('')+'</div>').join('')+'</div>';
+  return S.radical?'<div class="gw">'+(radHTML(ch,groupW(ch,d))||'<div class="rad two"></div>')+grp+'</div>':grp;
 }
 function pageHTML(chars,n,total,d,exp){
   const g=guideSVG();
   const head='<div class="ph"><div class="pt">'+esc(S.title||'')+'</div>'+(S.header?'<div class="pf"><span>姓名<i></i></span><span>日期<i></i></span></div>':'')+'</div>';
   const st='--s:'+d.s+'mm;--colh:'+d.colh.toFixed(2)+'mm;--ggap:'+d.ggap.toFixed(2)+'mm;--gb:'+GCOL[S.gcolor].b+';--tc:'+TCOL[S.tcolor]+';--pfont:'+FONTS[S.font].replace(/"/g,"'");
   const body=d.hz?'<div class="pbody sh">'+chars.map(ch=>groupHTMLh(ch,d,g)).join('')+'</div>':'<div class="pbody sv">'+chars.map(ch=>groupHTML(ch,d,g)).join('')+'</div>';
-  const pg='<div class="page" style="'+st+'">'+head+'<div class="pm">先看'+(d.hz?'左':'右')+'邊的筆順，再寫黑色範字、描淡色字，最後在空格自己寫。</div>'+body+'<div class="pfoot"><span class="src">'+SOURCE+'</span><span>'+n+' / '+total+'</span></div></div>';
+  const pg='<div class="page" style="'+st+'">'+head+'<div class="pm">先看'+(d.hz?'左':'右')+'邊的筆順，再寫黑色範字、描淡色字，最後在空格自己寫。</div>'+body+radFoot()+'<div class="pfoot"><span class="src">'+SOURCE+'</span><span>'+n+' / '+total+'</span></div></div>';
   return exp?pg:'<div class="pw">'+pg+'</div>';
 }
 
@@ -466,26 +502,29 @@ function bigSVG(ch){ const d=SD[ch]; return d?StrokeKit.bigSVG(ch,d,{arrow:S.arr
 function numNote(){ return S.numbers?'照著紅色數字的順序'+(S.arrow?'、沿著箭頭方向':'')+'寫，再看分解圖一筆一筆練習。':(S.arrow?'沿著箭頭方向，':'')+'先想一想筆順，再看分解圖一筆一筆練習。'; }
 function stepSVG(ch,k){ return StrokeKit.stepSVG(SD[ch],k); }
 function numDims(){
-  const s=parseFloat(S.size), W=186, H=238, big=56, dc=13, gap=4;
+  const s=parseFloat(S.size), W=186, H=238-footH(), big=56, dc=13, gap=4;
   const dper=Math.floor((W-big-gap+.25)/(dc-.25));
   const per=Math.floor((W-.3)/(s-.3));
   return {s,W,H,big,dc,dper,per};
 }
 function blockH(ch,d){
   const n=SD[ch]?SD[ch].s.length:0;
-  const decH=(S.decomp&&n)?5.5+Math.ceil(n/d.dper)*(d.dc-.25)+.25:0;
+  const decH=((S.decomp&&n)?5.5+Math.ceil(n/d.dper)*(d.dc-.25)+.25:0)+(radOf(ch)?RH:0);
   const top=Math.max(d.big,decH);
   return top+3+(+S.prows)*(d.s-.3)+.3;
 }
 function vGeo(ch,d){
-  const n=SD[ch]?SD[ch].s.length:0; let bw=48, g;
-  for(let it=0;it<3;it++){
-    const rem=d.H-bw-3-(n?5:0), rows=Math.floor((rem+.3)/(d.s-.3)), dper=Math.floor((rem+.25)/(d.dc-.25));
+  const n=SD[ch]?SD[ch].s.length:0;
+  const geo=bw=>{
+    const rem=d.H-bw-3-(n?5:0)-(S.radical?RH2:0), rows=Math.floor((rem+.3)/(d.s-.3)), dper=Math.floor((rem+.25)/(d.dc-.25));
     const dcols=(S.decomp&&n)?Math.ceil(n/dper):0, decW=dcols?dcols*(d.dc-.25)+.25+1.5:(n?0:7);
     let pcols=+S.prows; while(decW+pcols*(d.s-.3)+.3<40) pcols++;
-    let gw=decW+pcols*(d.s-.3)+.3; const nbw=Math.min(56,Math.max(40,gw)); if(nbw>gw) gw=nbw;
-    g={n,bw:nbw,rows,dper,dcols,pcols,gw,decW}; if(nbw===bw) break; bw=nbw;
-  }
+    return {n,rows,dper,dcols,pcols,gw:decW+pcols*(d.s-.3)+.3,decW};
+  };
+  let bw=48;
+  for(let it=0;it<3;it++){ const nbw=Math.min(56,Math.max(40,geo(bw).gw)); if(nbw===bw) break; bw=nbw; }
+  // 大字寬度沒收斂時，練習格與分解圖仍以最後的大字寬度計算，才不會超出頁面
+  const g=geo(bw); g.bw=bw; if(bw>g.gw) g.gw=bw;
   return g;
 }
 function buildNumPages(){
@@ -512,11 +551,12 @@ function numBlockHTML(ch,d,g){
   const data=SD[ch], n=data?data.s.length:0;
   const big='<div class="big">'+g+(data?bigSVG(ch):'<div class="fb ch">'+esc(ch)+'</div>')+'</div>';
   let right='';
-  if(!data) right='<div class="dec"><div class="nomsg">這個字目前還沒有數字筆順，<br>可以到「筆順製作」頁自己排好筆順，<br>或切換到「教育部筆順圖」版。</div></div>';
+  const rad=radHTML(ch);
+  if(!data) right='<div class="dec">'+rad+'<div class="nomsg">這個字目前還沒有數字筆順，<br>可以到「筆順製作」頁自己排好筆順，<br>或切換到「教育部筆順圖」版。</div></div>';
   else if(S.decomp){
     let cells=''; for(let k=0;k<n;k++) cells+='<div class="dcell"><i>'+(k+1)+'</i>'+stepSVG(ch,k)+'</div>';
-    right='<div class="dec"><div class="dlabel"><span>筆畫分解</span><span>共 <b>'+n+'</b> 畫</span></div><div class="dgrid">'+cells+'</div></div>';
-  } else right='<div class="dec"><div class="dlabel"><span></span><span>共 <b>'+n+'</b> 畫</span></div></div>';
+    right='<div class="dec">'+rad+'<div class="dlabel"><span>筆畫分解</span><span>共 <b>'+n+'</b> 畫</span></div><div class="dgrid">'+cells+'</div></div>';
+  } else right='<div class="dec">'+rad+'<div class="dlabel"><span></span><span>共 <b>'+n+'</b> 畫</span></div></div>';
   const tot=(+S.prows)*d.per, cells=[];
   for(let i=0;i<tot;i++) cells.push(i<S.reps?{k:'trace',ch}:{k:'blank'});
   let prac='';
@@ -541,13 +581,14 @@ function numGroupHTMLv(ch,d,g){
     dec+='</div>';
   }
   const prac=vCells(ch,G).map(col=>'<div class="pcol">'+col.map(c=>cellHTML(c,g)).join('')+'</div>').join('');
-  return '<div class="vg" data-ch="'+esc(ch)+'" style="width:'+G.gw.toFixed(2)+'mm">'+big+tot+'<div class="vcols">'+dec+prac+'</div></div>';
+  const rad=S.radical?(radHTML(ch,G.bw)||'<div class="rad two"></div>'):'';
+  return '<div class="vg" data-ch="'+esc(ch)+'" style="width:'+G.gw.toFixed(2)+'mm">'+big+tot+rad+'<div class="vcols">'+dec+prac+'</div></div>';
 }
 function numPageHTML(chars,n,total,d,exp){
   const g=guideSVG();
   const head='<div class="ph"><div class="pt">'+esc(S.title||'')+'</div>'+(S.header?'<div class="pf"><span>姓名<i></i></span><span>日期<i></i></span></div>':'')+'</div>';
   const st='--s:'+d.s+'mm;--big:'+d.big+'mm;--dc:'+d.dc+'mm;--gb:'+GCOL[S.gcolor].b+';--tc:'+TCOL[S.tcolor]+';--pfont:'+FONTS[S.font].replace(/"/g,"'");
-  const pg='<div class="page" style="'+st+'">'+head+'<div class="pm">'+numNote()+'</div>'+(d.vert?'<div class="pbody nvv">'+chars.map(ch=>numGroupHTMLv(ch,d,g)).join('')+'</div>':'<div class="pbody nv">'+chars.map(ch=>numBlockHTML(ch,d,g)).join('')+'</div>')+'<div class="pfoot"><span class="src">'+NUM_SOURCE+'</span><span>'+n+' / '+total+'</span></div></div>';
+  const pg='<div class="page" style="'+st+'">'+head+'<div class="pm">'+numNote()+'</div>'+(d.vert?'<div class="pbody nvv">'+chars.map(ch=>numGroupHTMLv(ch,d,g)).join('')+'</div>':'<div class="pbody nv">'+chars.map(ch=>numBlockHTML(ch,d,g)).join('')+'</div>')+radFoot()+'<div class="pfoot"><span class="src">'+NUM_SOURCE+'</span><span>'+n+' / '+total+'</span></div></div>';
   return exp?pg:'<div class="pw">'+pg+'</div>';
 }
 
@@ -575,6 +616,8 @@ function updateStatus(n){
   if(!list.length){ st.textContent='貼上文章後，右邊會出現筆順寫字本。'; return; }
   const miss=S.mode==='num'?list.filter(c=>!SD[c]):list.filter(c=>!STROKE_CHARS.has(c));
   st.innerHTML='要練習的字有 '+list.length+' 個，排成 '+n+' 頁。'+(miss.length?'<div class="miss-list">'+(S.mode==='num'?'以下 '+miss.length+' 個字目前沒有數字筆順，可到<a href="maker.html?ch='+encodeURIComponent(miss[0])+'">筆順製作</a>頁自己製作：':'以下 '+miss.length+' 個字不在教育部筆順提示中，只會有練習格：')+esc(miss.join('、'))+'</div>':'');
+  const noRad=S.radical?list.filter(c=>!RAD[c]):[];
+  if(noRad.length) st.innerHTML+='<div class="miss-list">以下 '+noRad.length+' 個字查不到教育部部首資料，不會標部首：'+esc(noRad.join('、'))+'</div>';
 }
 
 let mm=null;
@@ -602,7 +645,7 @@ function syncVis(){
 }
 $('#segDir').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; if(S.mode==='num') S.dirNum=b.dataset.v; else S.dirOff=b.dataset.v; save(); render(); });
 [['#segMode','mode'],['#segProws','prows'],['#segCols','cols'],['#segGrid','grid'],['#segGcolor','gcolor'],['#segTcolor','tcolor'],['#segSize','size'],['#segFont','font']].forEach(a=>bindSeg(...a));
-[['#cUnique','unique'],['#cHeader','header'],['#cDecomp','decomp'],['#cArrow','arrow'],['#cNumbers','numbers']].forEach(a=>bindCheck(...a));
+[['#cUnique','unique'],['#cHeader','header'],['#cRadical','radical'],['#cDecomp','decomp'],['#cArrow','arrow'],['#cNumbers','numbers']].forEach(a=>bindCheck(...a));
 const repOut=$('#repOut'); repOut.textContent=S.reps;
 const setReps=v=>{ S.reps=Math.max(0,Math.min(12,v)); repOut.textContent=S.reps; save(); render(); };
 $('#repMinus').onclick=()=>setReps(S.reps-1); $('#repPlus').onclick=()=>setReps(S.reps+1);
@@ -713,7 +756,12 @@ async function toPPTX(){
       line(ib.x,ib.y+ib.h,ib.w,0,'333333',false,0.75);
     });
     const pm=pg.querySelector('.pm'); if(pm) text(pm,pm.textContent,{align:'left',padW:60});
-    pg.querySelectorAll('.pfoot span').forEach(sp=>{ const b=R(sp); slide.addText(sp.textContent,{x:b.x*IN,y:b.y*IN,w:(b.w+2)*IN,h:b.h*IN,fontFace:'Microsoft JhengHei',fontSize:+(pt(sp)*(sp.classList.contains('src')?.9:1)).toFixed(1),color:'8A8F93',align:sp.classList.contains('src')?'left':'right',valign:'middle',margin:0,wrap:false}); });
+    pg.querySelectorAll('.pfoot span,.psrc').forEach(sp=>{ const src=sp.matches('.src,.psrc'), b=R(sp); slide.addText(sp.textContent,{x:b.x*IN,y:b.y*IN,w:(b.w+2)*IN,h:b.h*IN,fontFace:'Microsoft JhengHei',fontSize:+(pt(sp)*(src?.9:1)).toFixed(1),color:'8A8F93',align:src?'left':'right',valign:'middle',margin:0,wrap:false}); });
+    // 部首：「部首」＋有框的部首字＋部首外筆畫
+    for(const rd of pg.querySelectorAll('.rad')){
+      for(const el of rd.querySelectorAll('.rk,.ro')) text(el,el.textContent,{padW:4});
+      const rr=rd.querySelector('.rr'); if(rr){ text(rr,rr.textContent,{bold:true,padW:2}); box(R(rr),GB,0.75); }
+    }
     if(S.mode==='num'){
       for(const el of pg.querySelectorAll('.dlabel span,.nomsg')) if(el.textContent.trim()) text(el,el.textContent,{align:el.matches('.dlabel span:last-child')?'right':'left',padW:el.classList.contains('nomsg')?80:10});
       for(const el of pg.querySelectorAll('.vtot')) text(el,el.textContent,{padW:10});
@@ -761,6 +809,17 @@ function guidePNG(px){
   return new Promise(r=>c.toBlob(b=>b.arrayBuffer().then(a=>r(new Uint8Array(a))),'image/png'));
 }
 
+/* Word 的部首段落：一行（部首 艸（艹）　部首外 4 畫），窄的直式字組用兩行 */
+function radParas(D,ch,o={}){
+  const r=radOf(ch); if(!r) return [];
+  const F={ascii:OFFICE_FONT,eastAsia:OFFICE_FONT,hAnsi:OFFICE_FONT,cs:OFFICE_FONT}, HP=v=>Math.max(2,Math.round(v*2.8346*2)), TW=v=>Math.round(v*56.6929);
+  const fs=o.w?radFS(r,o.w):3.6, GB=hex(GCOL[S.gcolor].b), al=o.two?D.AlignmentType.CENTER:D.AlignmentType.LEFT;
+  const k=t=>new D.TextRun({text:t,font:F,size:HP(fs),color:'555555'});
+  const rr=new D.TextRun({text:radName(r),font:F,size:HP(fs*1.4),bold:true,color:GB,border:{style:D.BorderStyle.SINGLE,size:6,color:GB,space:1}});
+  const ro=k('部首外 '+r.out+' 畫');
+  if(o.two) return [new D.Paragraph({alignment:al,spacing:{before:0,after:TW(.8)},children:[k('部首 '),rr]}),new D.Paragraph({alignment:al,spacing:{before:0,after:TW(o.after||0)},children:[ro]})];
+  return [new D.Paragraph({alignment:al,spacing:{before:0,after:TW(o.after??1.5)},children:[k('部首 '),rr,k('　'),ro]})];
+}
 async function docxKit(){
   const D=await lib('docx');
   const TW=v=>Math.round(v*56.6929), HP=v=>Math.max(2,Math.round(v*2.8346*2)), PX=mm=>Math.round(mm/25.4*96);
@@ -796,6 +855,7 @@ async function toDOCXoffH(){
     say('正在產生 Word…第 '+(pi+1)+' / '+pages.length+' 頁',true);
     children.push(...K.header(pi,'先看左邊的筆順，再寫黑色範字、描淡色字，最後在空格自己寫。'));
     for(const ch of pages[pi]){
+      children.push(...radParas(D,ch));
       const sw=stripW(ch,d), per=hPer(ch,d), rowsC=hCells(ch,d), rows=[];
       for(let r=0;r<d.rows;r++){
         const cells=[];
@@ -813,6 +873,7 @@ async function toDOCXoffH(){
       children.push(new D.Paragraph({spacing:{before:0,after:0,line:K.TW(6),lineRule:D.LineRuleType.EXACT},children:[]}));
     }
     children.push(K.foot(SOURCE));
+    if(S.radical) children.push(K.foot(RAD_SOURCE));
   }
   return K.pack(children);
 }
@@ -852,6 +913,7 @@ async function toDOCXnumV(){
         kids=[new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.ImageRun({type:'png',data:u8,transformation:{width:K.PX(G.bw-1),height:K.PX(G.bw-1)},altText:{name:ch,description:'「'+ch+'」的筆順數字圖',title:ch}})]}),
               new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({text:'共 '+G.n+' 畫',font:K.F,size:K.HP(3.2),color:'555555'})]})];
       } else kids=[K.P([new D.TextRun({text:ch,font:K.F,size:K.HP(G.bw*.8)})],G.bw-1)];
+      kids.push(...radParas(D,ch,{two:true,w:G.bw}));
       row0.push(new D.TableCell({columnSpan:span,width:{size:K.TW(G.gw),type:D.WidthType.DXA},margins:{top:0,bottom:K.TW(2),left:0,right:0},borders:K.none,children:kids}));
       // 其他列：練習格（左到右＝最後一行到第一行）＋ 右邊的分解圖
       const pc=vCells(ch,G).reverse();
@@ -868,6 +930,7 @@ async function toDOCXnumV(){
     const rows=[new D.TableRow({children:row0})].concat(body.map(r=>new D.TableRow({height:{value:K.TW(d.s-.3),rule:D.HeightRule.EXACT},cantSplit:true,children:r})));
     children.push(new D.Table({rows,columnWidths:cols,layout:D.TableLayoutType.FIXED,alignment:D.AlignmentType.RIGHT}));
     children.push(K.foot(NUM_SOURCE));
+    if(S.radical) children.push(K.foot(RAD_SOURCE));
   }
   return K.pack(children);
 }
@@ -913,7 +976,7 @@ async function toDOCXnum(){
         const u8=await svgPNG('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><rect width="1024" height="1024" fill="#fff"/>'+G1024+inner+'</svg>',720);
         bigKids=[new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:0,after:0},children:[new ImageRun({type:'png',data:u8,transformation:{width:PX(d.big-.8),height:PX(d.big-.8)},altText:{name:ch,description:'「'+ch+'」的筆順數字圖',title:ch}})]})];
       } else bigKids=[P([new TextRun({text:ch,font:F,size:HP(d.big*.8)})],d.big-1)];
-      const right=[];
+      const right=radParas(D,ch);
       if(!data) right.push(new Paragraph({children:[new TextRun({text:'這個字目前還沒有數字筆順，可以到「筆順製作」頁自己排好筆順，或切換到「教育部筆順圖」版。',font:F,size:HP(3.6),color:'8A8F93'})]}));
       else{
         right.push(new Paragraph({spacing:{after:TW(1)},children:[new TextRun({text:(S.decomp?'筆畫分解　':'')+'共 '+data.s.length+' 畫',font:F,size:HP(3.6),color:'555555'})]}));
@@ -938,6 +1001,7 @@ async function toDOCXnum(){
       children.push(new Paragraph({spacing:{before:0,after:0,line:TW(5),lineRule:LineRuleType.EXACT},children:[]}));
     }
     children.push(new Paragraph({children:[new TextRun({text:NUM_SOURCE,size:HP(3),color:'8A8F93',font:{eastAsia:'微軟正黑體',ascii:'Arial',hAnsi:'Arial'}})]}));
+    if(S.radical) children.push(new Paragraph({children:[new TextRun({text:RAD_SOURCE,size:HP(3),color:'8A8F93',font:{eastAsia:'微軟正黑體',ascii:'Arial',hAnsi:'Arial'}})]}));
   }
   const doc=new Document({creator:'筆順寫字本產生器',title:S.title||'筆順練習',styles:{default:{document:{run:{font:F}}}},
     sections:[{properties:{page:{size:{width:TW(210),height:TW(297)},margin:{top:TW(11),bottom:TW(8),left:TW(12),right:TW(12),header:0,footer:0}}},children}]});
@@ -971,6 +1035,15 @@ async function toDOCX(){
     for(const ch of chars){ if(STROKE_CHARS.has(ch)) strips[ch]=await pngBytes(ch); }
     chars.forEach((ch,j)=>{ if(j) cols.push(TW(d.ggap)); for(let c=0;c<+S.cols;c++) cols.push(TW(s)); cols.push(TW(stripW(ch,d))); });
     const rows=[];
+    if(S.radical){
+      const top=[];
+      chars.forEach((ch,j)=>{
+        if(j) top.push(gap());
+        const w=groupW(ch,d), kids=radParas(D,ch,{two:true,w,after:1});
+        top.push(new TableCell({columnSpan:+S.cols+1,width:{size:TW(w),type:WidthType.DXA},margins:{top:0,bottom:0,left:0,right:0},borders:{top:off,bottom:off,left:off,right:off},children:kids.length?kids:[new Paragraph('')]}));
+      });
+      rows.push(new TableRow({cantSplit:true,children:top}));
+    }
     for(let r=0;r<d.rows;r++){
       const cells=[];
       chars.forEach((ch,j)=>{
@@ -993,6 +1066,7 @@ async function toDOCX(){
     children.push(new Paragraph({spacing:{after:TW(2.5)},children:[new TextRun({text:'先看右邊的筆順，再寫黑色範字、描淡色字，最後在空格自己寫。',font:F,size:HP(4),color:GB})]}));
     children.push(new Table({rows,columnWidths:cols,width:{size:cols.reduce((a,b)=>a+b,0),type:WidthType.DXA},layout:TableLayoutType.FIXED,alignment:AlignmentType.RIGHT}));
     children.push(new Paragraph({spacing:{before:TW(2)},children:[new TextRun({text:SOURCE,size:HP(3),color:'8A8F93',font:{eastAsia:'微軟正黑體',ascii:'Arial',hAnsi:'Arial'}})]}));
+    if(S.radical) children.push(new Paragraph({children:[new TextRun({text:RAD_SOURCE,size:HP(3),color:'8A8F93',font:{eastAsia:'微軟正黑體',ascii:'Arial',hAnsi:'Arial'}})]}));
   }
   const doc=new Document({creator:'筆順寫字本產生器',title:S.title||'筆順練習',styles:{default:{document:{run:{font:F}}}},
     sections:[{properties:{page:{size:{width:TW(210),height:TW(297)},margin:{top:TW(11),bottom:TW(8),left:TW(12),right:TW(12),header:0,footer:0}}},children}]});
